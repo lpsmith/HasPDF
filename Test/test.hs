@@ -230,9 +230,9 @@ crazyWord r@(Rectangle (xa :+ ya) (xb :+ yb)) DrawWord d = do
     strokeColor $ Rgb 0 0 1
     let m = (ya+yb)/2.0
     stroke $ Line (xa :+ m) (xb :+ m)
-crazyWord (Rectangle (xa :+ ya) (xb :+ yb)) DrawGlue _ = do
+crazyWord (Rectangle a b) DrawGlue _ = do
     fillColor $ Rgb 0 0 1
-    fill (Circle (((xa+xb)/2.0):+ ((ya+yb)/2.0)) ((xb-xa)/2.0))
+    fill (Circle ((a + b) / 2) (abs (realPart b - realPart a) / 2))
 
 
 
@@ -306,10 +306,10 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
 
 containerTest :: PDFReference PDFPage -> Rectangle ->( TM StandardParagraphStyle StandardStyle ())   -> PDF ()
 containerTest p (Rectangle (xa :+ ya) (xb :+ yb)) theText =
-    let c = mkContainer xa ya xb yb 0
+    let c = mkContainer (xa :+ ya) (xb :+ yb) 0
         (d,c',r) = fillContainer (defaultVerState NormalParagraph) c . getBoxes NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
             theText
-        cb = mkContainer xa (ya-100) xb yb 0
+        cb = mkContainer (xa :+ (ya-100)) (xb :+ yb) 0
         (d',c'',_) = fillContainer (defaultVerState NormalParagraph) cb r
     in drawWithPage p $ do
       d
@@ -533,7 +533,7 @@ textBoxes = do
         h = 200
     fillColor blue
     fill $ Circle (x :+ y) 5
-    let (r,b) = drawTextBox x y w h S NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+    let (r,b) = drawTextBox (x :+ y) (w :+ h) S NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                 setJustification FullJustification
                 paragraph $ do
                     txt $ "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor "

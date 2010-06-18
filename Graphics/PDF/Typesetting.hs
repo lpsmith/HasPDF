@@ -119,7 +119,7 @@ displayFormattedText (Rectangle (xa :+ ya) (xb :+ yb)) defaultVStyle defaultHSty
     --    closePath
     --    setAsClipPath
         let (a, s', boxes) = (runRWS . unTM $ t >>= \x' -> do {return x'} ) () (defaultTmState defaultVStyle defaultHStyle)
-            c = mkContainer xa yb (xb-xa) (yb-ya) 0
+            c = mkContainer (xa :+ yb) ((xb-xa) :+ (yb-ya)) 0
             (d,_,_) = fillContainer (pageSettings s') c boxes
         d
         return a
@@ -425,19 +425,17 @@ data Orientation = E | W | N | S | NE | NW | SE | SW deriving(Eq,Show)
 
 -- | Draw a text box with relative position. Useful for labels
 drawTextBox :: (ParagraphStyle ps s, Style s)
-            => PDFFloat -- ^ x
-            -> PDFFloat -- ^ y
-            -> PDFFloat -- ^ width limit
-            -> PDFFloat -- ^ height limit
+            => Point -- ^ x,y
+            -> Point -- ^ width limit, height limit
             -> Orientation
             -> ps -- ^ default vertical style
             -> s -- ^ Default horizontal style
             -> TM ps s a -- ^ Typesetting monad
             -> (Rectangle,Draw ())
-drawTextBox x y w h ori ps p t =
+drawTextBox (x :+ y) (w :+ h) ori ps p t =
     let b = getBoxes ps p t
         sh = styleHeight p
-        c = mkContainer 0 0 w h sh
+        c = mkContainer 0 (w :+ h) sh
         (d,c',_) = fillContainer (defaultVerState ps) c b
         Rectangle (xa :+ ya) (xb :+ yb)  = containerContentRectangle  c'
         wc = xb - xa

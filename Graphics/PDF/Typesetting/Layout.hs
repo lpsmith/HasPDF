@@ -50,7 +50,7 @@ data VerState s = VerState { baselineskip :: !(PDFFloat,PDFFloat,PDFFloat) -- ^ 
                            , lineskiplimit :: !PDFFloat -- ^ Default value 2
                            , currentParagraphStyle :: !s
                            }
-                           
+
 data VBox ps s = Paragraph Int [Letter s] !(Maybe ps) !BRState
                | VBox !PDFFloat !PDFFloat !PDFFloat ![VBox ps s] !(Maybe ps)
                | VGlue !PDFFloat !PDFFloat !PDFFloat !(Maybe (PDFFloat,PDFFloat)) !(Maybe ps)
@@ -60,7 +60,7 @@ notGlue :: VBox ps s -> Bool
 notGlue (VGlue _ _ _ _ _) = False
 notGlue (Paragraph _ _ _ _) = False
 notGlue _ = True
-                              
+
 vglue :: Maybe ps
      -> PDFFloat -- ^ Glue height
      -> PDFFloat -- ^ Glue dilatation factor
@@ -79,7 +79,7 @@ instance Show (VBox ps s) where
 instance MaybeGlue (VBox ps s) where
   glueSizeWithRatio (VGlue w _ _ (Just(y,z)) _) r = glueSize w y z r
   glueSizeWithRatio a _ = boxHeight a
-  
+
   glueY (VGlue _ _ _ (Just(y,_)) _)  = y
   glueY _ = 0
   glueZ (VGlue _ _ _ (Just(_,z)) _)  = z
@@ -104,7 +104,7 @@ instance Box (VBox ps s) where
 instance (ParagraphStyle ps s) => DisplayableBox (VBox ps s) where
         strokeBox (Paragraph _ _ _ _) _ = return ()
         strokeBox b@(VBox _ _ _ l _) xy = strokeVBoxes l (xy - (0 :+ boxHeight b))
-        strokeBox (VGlue h w delta _ (Just style)) xy = 
+        strokeBox (VGlue h w delta _ (Just style)) xy =
             if (isJust . interline $ style)
                 then
                     (fromJust . interline $ style) $ Rectangle (xy + (delta :+ (-h))) (xy + ((w+delta) :+ 0))
@@ -113,65 +113,63 @@ instance (ParagraphStyle ps s) => DisplayableBox (VBox ps s) where
         strokeBox (VGlue _ _ _ _ _) __ = return ()
 
         strokeBox (SomeVBox delta _ a _) (x :+ y) = strokeBox a ((x+delta) :+ y)
-                
+
 type Width = PDFFloat
 type Height = PDFFloat
 
 -- | Container for vboxes (x,y,width,maxheight,height,currenty,current z, tolerance para)
 -- tolerance para means a paragraph is not started if too close from the bottom edge of the box
-data Container ps s = Container PDFFloat PDFFloat Width PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat [VBox ps s]
+data Container ps s = Container !Point !Point !PDFFloat !PDFFloat !PDFFloat !PDFFloat [VBox ps s]
 
 -- | Create a empty container to constraint the amount of line that can be displayed
-mkContainer :: PDFFloat -- ^ x
-            -> PDFFloat -- ^ y
-            -> PDFFloat -- ^ width
-            -> PDFFloat -- ^ height
+mkContainer :: Point -- ^ x,y
+            -> Point -- ^ width, height
             -> PDFFloat -- ^ Pargraph tolerance
             -> Container ps s -- ^ New container
-mkContainer x y width height tol = Container x y width height 0 0 0 tol []            
+mkContainer xy wh tol = Container xy wh 0 0 0 tol []
 
 -- | Get the width of the container
-containerWidth :: Container ps s -> PDFFloat
-containerWidth (Container _ _ w _ _ _ _ _ _) = w
+containerWidth :: Container ps s -> Scalar
+containerWidth (Container _ (w :+ _) _ _ _ _ _) = w
 
 -- | Get the width of the container
-containerParaTolerance :: Container ps s -> PDFFloat
-containerParaTolerance (Container _ _ _ _ _ _ _ t _) = t
+containerParaTolerance :: Container ps s -> Scalar
+containerParaTolerance (Container _ _ _ _ _ t _) = t
 
 -- | Get the height of the container
-containerHeight :: Container ps s -> PDFFloat
-containerHeight (Container _ _ _ h _ _ _ _ _) = h
+containerHeight :: Container ps s -> Scalar
+containerHeight (Container _  (_ :+ h) _ _ _ _ _) = h
 
 -- | Get the current height of the container without glue dilatation
 containerCurrentHeight :: Container ps s -> PDFFloat
-containerCurrentHeight (Container _ _ _ _ ch _ _ _ _) = ch
+containerCurrentHeight (Container _ _ ch _ _ _ _) = ch
 
 -- | Get the content height of the container with glue dilatation
 containerContentHeight :: Container ps s -> PDFFloat
-containerContentHeight (Container _ _ _ maxh h y z _ _) = let r = min (dilatationRatio maxh h y z) 2.0 in
+containerContentHeight (Container _ (_ :+ maxh) h y z _ _) = let r = min (dilatationRatio maxh h y z) 2.0 in
  glueSize h y z r
- 
+
 -- | Get the minimum left border of the container content
 containerContentLeftBorder :: Container ps s -> PDFFloat
-containerContentLeftBorder (Container _ _ _ _ _ _ _ _ []) = 0.0
-containerContentLeftBorder (Container _ _ _ _ _ _ _ _ l) = minimum . map getBoxDelta $ l
-   
+containerContentLeftBorder (Container _ _ _ _ _ _ []) = 0.0
+containerContentLeftBorder (Container _ _ _ _ _ _ l) = minimum . map getBoxDelta $ l
+
 -- | Get the maximum right border of the container content (maybe bigger than container width due to overfull lines)
 containerContentRightBorder :: Container ps s -> PDFFloat
-containerContentRightBorder (Container _ _ _ _ _ _ _ _ []) = 0.0
-containerContentRightBorder (Container _ _ _ _ _ _ _ _ l) = 
+containerContentRightBorder (Container _ _ _ _ _ _ []) = 0.0
+containerContentRightBorder (Container _ _ _ _ _ _ l) =
  let xmax = maximum . map rightBorder $ l
      rightBorder x = getBoxDelta x + boxWidth x
  in
   xmax
 
 -- | Container horizontal position
-containerX :: Container ps s -> PDFFloat
-containerX (Container x _ _ _ _ _ _ _ _) = x
+containerX :: Container ps s -> Scalar
+containerX (Container (x :+ _) _ _ _ _ _ _) = x
 
 -- | Container vertical position
 containerY :: Container ps s -> PDFFloat
-containerY (Container _ y _ _ _ _ _ _ _) = y
+containerY (Container (_ :+ y) _ _ _ _ _ _) = y
 
 -- | Return the rectangle containing the text after formatting and glue dilatation
 containerContentRectangle :: Container ps s -> Rectangle
@@ -186,23 +184,23 @@ containerContentRectangle c = Rectangle ((x+l) :+ (y-th)) ((x+r) :+ y)
 
 -- | Get the required style for the interline glue
 getInterlineStyle :: ComparableStyle ps => VBox ps s -> VBox ps s -> Maybe ps
-getInterlineStyle (VBox _ _ _ _ (Just s)) (SomeVBox _ _ _ (Just s')) | s `isSameStyleAs` s' = Just s
-                                                                     | otherwise = Nothing
-
-getInterlineStyle (VBox _ _ _ _ (Just s)) (VBox _ _ _ _ (Just s')) |  s `isSameStyleAs`  s' = Just s
-                                                                   | otherwise = Nothing
-
-getInterlineStyle (SomeVBox _ _ _ (Just s)) (SomeVBox _ _ _ (Just s')) |  s `isSameStyleAs`  s' = Just s
-                                                                       | otherwise = Nothing
-
-getInterlineStyle (SomeVBox _ _ _ (Just s)) (VBox _ _ _ _ (Just s')) |  s `isSameStyleAs`  s' = Just s
-                                                                     | otherwise = Nothing
-
+getInterlineStyle (VBox _ _ _ _ (Just s)) (SomeVBox _ _ _ (Just s'))
+  | s `isSameStyleAs` s' = Just s
+  | otherwise = Nothing
+getInterlineStyle (VBox _ _ _ _ (Just s)) (VBox _ _ _ _ (Just s'))
+  |  s `isSameStyleAs`  s' = Just s
+  | otherwise = Nothing
+getInterlineStyle (SomeVBox _ _ _ (Just s)) (SomeVBox _ _ _ (Just s'))
+  |  s `isSameStyleAs`  s' = Just s
+  | otherwise = Nothing
+getInterlineStyle (SomeVBox _ _ _ (Just s)) (VBox _ _ _ _ (Just s'))
+  |  s `isSameStyleAs`  s' = Just s
+  | otherwise = Nothing
 getInterlineStyle _ _ = Nothing
 
 -- | Interline glue required
 interlineGlue :: ComparableStyle ps => VerState ps -> VBox ps s -> VBox ps s -> Maybe (VBox ps s, PDFFloat, PDFFloat)
-interlineGlue settings a b | notGlue a && notGlue b = 
+interlineGlue settings a b | notGlue a && notGlue b =
     let p = boxDescent a
         h = boxHeight b - boxDescent b
         (ba,by,bz) = baselineskip settings
@@ -212,7 +210,7 @@ interlineGlue settings a b | notGlue a && notGlue b =
         theWidth = boxWidth a
         theDelta = getBoxDelta a
     in
-    if p <= -1000 
+    if p <= -1000
         then
             Nothing
         else
@@ -224,28 +222,26 @@ interlineGlue settings a b | notGlue a && notGlue b =
                                   | otherwise = Nothing
 
 addTo :: ComparableStyle ps => VerState ps -> VBox ps s -> Container ps s -> Container ps s
-addTo _ line (Container px py w maxh h y z t []) = Container px py w maxh ((boxHeight line)+h) y z t [line]
-addTo settings line (Container px py w maxh h y z t l@(a:_)) = 
+addTo _ line (Container pt sz h y z t []) = Container pt sz ((boxHeight line)+h) y z t [line]
+addTo settings line (Container pt sz h y z t ls@(a:_)) =
     case interlineGlue settings a line of
         Nothing ->
-          let h' = boxHeight line + h 
+          let h' = boxHeight line + h
               y' = y + glueY line
               z' = z + glueZ line
           in
-          Container px py w maxh h' y' z' t (line:l)
+          Container pt sz h' y' z' t (line:ls)
         Just (v,ny,nz) ->
           let h' = boxHeight line + h + boxHeight v
               y' = y + ny + glueY line
               z' = z + nz + glueZ line
           in
-          Container px py w maxh h' y' z' t (line:v:l)
-          
+          Container pt sz h' y' z' t (line:v:ls)
+
 isOverfull :: Container ps s -> Bool
-isOverfull (Container _ _ _ maxh h y z _ _) = let r = dilatationRatio maxh h y z
- in
-   if r >= bigAdjustRatio then h > maxh else r <= -1
-
-
+isOverfull (Container _ (_ :+ maxh) h y z _ _)
+  = let r = dilatationRatio maxh h y z
+     in if r >= bigAdjustRatio then h > maxh else r <= -1
 
 -- | Paragraph style
 class (ComparableStyle a, Style s) => ParagraphStyle a s | a -> s where
@@ -254,29 +250,29 @@ class (ComparableStyle a, Style s) => ParagraphStyle a s | a -> s where
                -> PDFFloat -- ^ Width of the text area used by the typesetting algorithm
                -> Int -- ^ Line number
                -> PDFFloat -- ^ Line width
-    
+
     -- | Horizontal shift of the line position relatively to the left egde of the paragraph bounding box
-    linePosition :: a -- ^ The style 
+    linePosition :: a -- ^ The style
                   -> PDFFloat -- ^ Width of the text area used by the typesetting algorithm
-                  -> Int -- ^ Line number 
+                  -> Int -- ^ Line number
                   -> PDFFloat -- ^ Horizontal offset from the left edge of the text area
-    
+
     -- | How to style the interline glues added in a paragraph by the line breaking algorithm
-    interline :: a -- ^ The style 
+    interline :: a -- ^ The style
               -> Maybe (Rectangle -> Draw ()) -- ^ Function used to style interline glues
     interline _ = Nothing
     lineWidth _ w _ = w
     linePosition _ _ = const 0.0
-    
+
     -- | Change the content of a paragraph before the line breaking algorithm is run. It may also change the style
     paragraphChange :: a -- ^ The style
                -> Int -- ^ Line offset different from 0 when a paragraph has been broken
                -> [Letter s] -- ^ List of letters in the paragraph
                -> (a,[Letter s]) -- ^ Update style and list of letters
     paragraphChange a _ l = (a,l)
-    
+
     -- | Get the paragraph bounding box and the paragraph draw command to apply additional effects
-    paragraphStyle :: a -- ^ The style 
+    paragraphStyle :: a -- ^ The style
                    -> Maybe (Rectangle -> Draw b -> Draw ()) -- ^ Function used to style a paragraph
     paragraphStyle _ = Nothing
 
@@ -294,7 +290,7 @@ isSameParaStyle :: ComparableStyle ps => ps -> VBox ps s -> Bool
 isSameParaStyle s (Paragraph _ _ (Just s') _) =  s `isSameStyleAs`  s'
 isSameParaStyle s (VBox _ _ _ _ (Just s')) =  s `isSameStyleAs`  s'
 isSameParaStyle s (VGlue _ _ _ _ (Just s')) =  s `isSameStyleAs`  s'
-isSameParaStyle s (SomeVBox _ _ _ (Just s'))  =  s `isSameStyleAs`  s'     
+isSameParaStyle s (SomeVBox _ _ _ (Just s'))  =  s `isSameStyleAs`  s'
 isSameParaStyle _ _ = False
 
 recurseStrokeVBoxes :: (ParagraphStyle ps s) => Int -> [VBox ps s] -> Point -> Draw ()
@@ -310,7 +306,7 @@ recurseStrokeVBoxes nb (a:l) (xa :+ y) = do
     strokeBox a (xa :+ y)
     recurseStrokeVBoxes (nb+1) l (xa :+ (y-h))
 
-drawWithParaStyle :: (ParagraphStyle ps s) => ps -> [VBox ps s] -> Point -> Draw ()   
+drawWithParaStyle :: (ParagraphStyle ps s) => ps -> [VBox ps s] -> Point -> Draw ()
 drawWithParaStyle style b (xa :+ y') = do
     let  (l',l'') = span (isSameParaStyle style) b
          h' = foldl' (\x' ny -> x' + boxHeight ny) 0.0 l'
@@ -328,13 +324,12 @@ strokeVBoxes :: (ParagraphStyle ps s) => [VBox ps s] -- ^ List of boxes
              -> Point -- ^ position
              -> Draw ()
 strokeVBoxes [] _ = return ()
-strokeVBoxes b@((Paragraph _ _ (Just s') _):_) xy = drawWithParaStyle s' b xy 
-strokeVBoxes b@((VBox _ _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy 
+strokeVBoxes b@((Paragraph _ _ (Just s') _):_) xy = drawWithParaStyle s' b xy
+strokeVBoxes b@((VBox _ _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy
 strokeVBoxes b@((VGlue _ _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy
 strokeVBoxes b@((SomeVBox _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy
-strokeVBoxes (a:l) (xa :+ y) = 
+strokeVBoxes (a:l) (xa :+ y) =
     do
         let h = boxHeight a
         strokeBox a (xa :+ y)
         strokeVBoxes l (xa :+ (y-h))
-        

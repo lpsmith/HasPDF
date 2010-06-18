@@ -77,12 +77,12 @@ dilateVboxes _ a = a
 
 drawContainer :: ParagraphStyle ps s => Container ps s -- ^ Container
               -> Draw ()
-drawContainer (Container px py _ maxh h y z _ oldl) =
+drawContainer (Container pt (_ :+ maxh) h y z _ oldl) =
     let l' = reverse oldl
         r = min (dilatationRatio maxh h y z) 2.0
         l'' = map (dilateVboxes r) l'
     in
-      strokeVBoxes l'' (px :+ py)
+      strokeVBoxes l'' pt
 
 -- | Create a new paragraph from the remaining letters
 createPara :: Int
