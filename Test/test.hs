@@ -18,7 +18,7 @@ module Main where
 import Graphics.PDF
 import Penrose
 import System.Random
-            
+
 fontDebug :: PDFFont -> PDFString -> Draw ()
 fontDebug f t = do
      drawText $ do
@@ -34,7 +34,7 @@ fontDebug f t = do
      fill $ Circle 10 200 10
      stroke $ Rectangle (10 :+ (200.0 - (getDescent f))) ((10.0 + textWidth f t) :+ (200.0 - getDescent f + getHeight f))
 
-      
+
 geometryTest :: Draw ()
 geometryTest  = do
         strokeColor red
@@ -49,14 +49,14 @@ lineStyle  = do
             setWidth 2
             setDash $ DashPattern [3] 0
             geometryTest
-            
-            
+
+
 shadingTest :: Draw ()
 shadingTest  = do
      paintWithShading (RadialShading 0 0 50 0 0 600 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Rectangle 0 (300 :+ 300))
      paintWithShading (AxialShading 300 300 600 400 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Ellipse 300 300 600 400)
-     
-                     
+
+
 patternTest :: PDFReference PDFPage -> PDF ()
 patternTest page = do
      p <- createUncoloredTiling 0 0 100 50 100 50 ConstantSpacing pattern
@@ -67,19 +67,19 @@ patternTest page = do
          fillAndStroke $ Ellipse 0 0 300 300
          setColoredFillPattern cp
          fillAndStroke $ Ellipse 300 300 600 400
-         
- where 
+
+ where
        pattern = do
            stroke (Ellipse 0 0 100 50)
        cpattern = do
            strokeColor (Rgb 0 0 1)
-           stroke (Ellipse 0 0 100 50) 
-           
+           stroke (Ellipse 0 0 100 50)
+
 testAnnotation ::PDFReference PDFPage -> PDF ()
 testAnnotation p = do
     drawWithPage p $ do
       r
-   
+
     p1 <- addPage Nothing
     drawWithPage p1 $ do
       withNewContext $ do
@@ -115,16 +115,16 @@ testAnnotation p = do
         drawText $ text (PDFFont Times_Roman 12) 10 30 (toPDFString "Go to my blog")
         stroke $ Rectangle 0 (200 :+ 100)
         newAnnotation (TextAnnotation (toPDFString "Key annotation") [100,100,130,130] Key)
- 
+
 textTest :: Draw ()
 textTest = do
     strokeColor red
     fillColor blue
     fontDebug (PDFFont Times_Roman 48) (toPDFString "This is a \\test (éèçàù)!")
 
-              
+
 testImage ::  JpegFile -> PDFReference PDFPage -> PDF ()
-testImage jpgf page =  do
+testImage jpg page =  do
     jpg <- createPDFJpeg jpg
     drawWithPage page $ do
       withNewContext $ do
@@ -135,7 +135,7 @@ testImage jpgf page =  do
            applyMatrix $ translate (200 :+ 200)
            applyMatrix $ scale (2 :+ 2)
            drawXObject jpg
-           
+
 
 data MyParaStyles = Normal
                   | Bold
@@ -144,7 +144,7 @@ data MyParaStyles = Normal
                   | DebugStyle
                   | RedRectStyle
                   | BlueStyle
-                  
+
 instance ComparableStyle MyParaStyles where
   isSameStyleAs Normal Normal = True
   isSameStyleAs Bold Bold = True
@@ -154,8 +154,8 @@ instance ComparableStyle MyParaStyles where
   isSameStyleAs RedRectStyle RedRectStyle = True
   isSameStyleAs BlueStyle BlueStyle = True
   isSameStyleAs _ _ = False
-  
-                  
+
+
 instance Style MyParaStyles where
     textStyle Normal = TextStyle (PDFFont Times_Roman 10) black black FillText 1.0 1.0 1.0 1.0
     textStyle Bold = TextStyle (PDFFont Times_Bold 12) black black FillText 1.0 1.0 1.0 1.0
@@ -164,14 +164,14 @@ instance Style MyParaStyles where
     textStyle Crazy = TextStyle (PDFFont Times_Roman 10) red red FillText 1.0 1.0 1.0 1.0
     textStyle (SuperCrazy _ _) = TextStyle (PDFFont Times_Roman 12) black black FillText 1.0 2.0 0.5 0.5
     textStyle BlueStyle = TextStyle (PDFFont Times_Roman 10) black black FillText 1.0 1.0 1.0 1.0
-    
+
     sentenceStyle BlueStyle = Just $ \r d -> do
         fillColor $ Rgb 0.6 0.6 1
         strokeColor $ Rgb 0.6 0.6 1
         fillAndStroke r
         d
         return()
-    
+
     sentenceStyle RedRectStyle = Just $ \r d -> do
         strokeColor red
         stroke r
@@ -182,13 +182,13 @@ instance Style MyParaStyles where
        strokeColor blue
        stroke r
     sentenceStyle _ = Nothing
-           
+
     wordStyle DebugStyle = Just $ \r m d ->
       case m of
           DrawWord -> d >> return ()
           DrawGlue -> d >> stroke r
     wordStyle Crazy = Just crazyWord
-    wordStyle (SuperCrazy l _) = Just ws 
+    wordStyle (SuperCrazy l _) = Just ws
      where
         ws _ DrawGlue _ = return ()
         ws (Rectangle (xa :+ ya) (xb :+ yb)) DrawWord drawWord = do
@@ -210,35 +210,35 @@ instance Style MyParaStyles where
             return ()
 
     wordStyle _ = Nothing
-    
+
     updateStyle (SuperCrazy a b) = SuperCrazy (drop 8 a) (tail b)
     updateStyle a = a
-    
+
     styleHeight r@(SuperCrazy _ _) = (getHeight . textFont . textStyle $ r) + 4.0
     styleHeight r = getHeight . textFont . textStyle $ r
-    
+
     styleDescent r@(SuperCrazy _ _) = (getDescent . textFont . textStyle $ r) + 2
     styleDescent r = getDescent . textFont . textStyle $ r
-    
 
-             
+
+
 crazyWord :: Rectangle -> StyleFunction -> Draw a -> Draw ()
 crazyWord r@(Rectangle (xa :+ ya) (xb :+ yb)) DrawWord d = do
-    fillColor $ Rgb 0.6 1 0.6 
+    fillColor $ Rgb 0.6 1 0.6
     fill r
     d
     strokeColor $ Rgb 0 0 1
     let m = (ya+yb)/2.0
-    stroke $ Line xa m xb m 
+    stroke $ Line xa m xb m
 crazyWord (Rectangle (xa :+ ya) (xb :+ yb)) DrawGlue _ = do
     fillColor $ Rgb 0 0 1
     fill (Circle ((xa+xb)/2.0) ((ya+yb)/2.0) ((xb-xa)/2.0))
-    
-   
-    
+
+
+
 superCrazy :: MyParaStyles
 superCrazy = SuperCrazy (randomRs (0,32) (mkStdGen 0)) (randomRs (-10.0,10.0) (mkStdGen 10000))
-    
+
 data MyVertStyles = NormalPara
                   | CirclePara
                   | BluePara !PDFFloat
@@ -248,11 +248,11 @@ instance ComparableStyle MyVertStyles where
     isSameStyleAs CirclePara CirclePara = True
     isSameStyleAs (BluePara _) (BluePara _) = True
     isSameStyleAs _ _ = False
-    
-    
+
+
 instance ParagraphStyle MyVertStyles MyParaStyles  where
     lineWidth (BluePara a) w nb = (if nb > 3 then w else w-a) - 20.0
-    lineWidth CirclePara _ nb = 
+    lineWidth CirclePara _ nb =
            let nbLines = 15.0
                r = nbLines * (getHeight . textFont . textStyle $ Normal)
                pasin x' = if x' >= 1.0 then pi/2 else if x' <= -1.0 then (-pi/2) else asin x'
@@ -260,20 +260,20 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
            in
            abs(2*r*cos (angle nb))
     lineWidth _ w _ = w
-           
+
     linePosition (BluePara a) _ nb = (if nb > 3 then 0.0 else a) + 10.0
     linePosition a@(CirclePara) w nb = max 0 ((w - lineWidth a w nb) / 2.0)
     linePosition _ _ _ = 0.0
-    
+
     interline (BluePara _) = Just $ \r -> do
         fillColor $ Rgb 0.6 0.6 1
         strokeColor $ Rgb 0.6 0.6 1
         fillAndStroke r
     interline _ = Nothing
-        
-    paragraphChange (BluePara _) _ (AChar st c _:l) = 
+
+    paragraphChange (BluePara _) _ (AChar st c _:l) =
         let f = PDFFont Helvetica_Bold 45
-            w' = charWidth f c 
+            w' = charWidth f c
             charRect = Rectangle (0 :+ (- getDescent f)) (w' :+ (getHeight f - getDescent f))
             c' = mkLetter (0,0,0) Nothing . mkDrawBox $ do
                 withNewContext $ do
@@ -290,9 +290,9 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
                     paintWithShading (AxialShading 0 (- getDescent f) w' (getHeight f - getDescent f) (Rgb 1 0 0) (Rgb 0 0 1)) (addShape charRect)
         in
         (BluePara w', c':l)
-    
+
     paragraphChange s _ l = (s,l)
-    
+
     paragraphStyle (BluePara _) = Just $ \(Rectangle (xa :+ ya) (xb :+ yb)) b -> do
         let f = Rectangle ((xa-3) :+ (ya-3)) ((xb+3) :+ (yb+3))
         fillColor $ Rgb 0.6 0.6 1
@@ -302,10 +302,10 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
         stroke f
         return ()
     paragraphStyle _ = Nothing
-    
-            
+
+
 containerTest :: PDFReference PDFPage -> Rectangle ->( TM StandardParagraphStyle StandardStyle ())   -> PDF ()
-containerTest p (Rectangle (xa :+ ya) (xb :+ yb)) theText = 
+containerTest p (Rectangle (xa :+ ya) (xb :+ yb)) theText =
     let c = mkContainer xa ya xb yb 0
         (d,c',r) = fillContainer (defaultVerState NormalParagraph) c . getBoxes NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
             theText
@@ -323,8 +323,8 @@ containerTest p (Rectangle (xa :+ ya) (xb :+ yb)) theText =
       strokeColor blue
       stroke $ containerContentRectangle c'
       stroke $ containerContentRectangle c''
-      
-    
+
+
 standardStyleTest :: TM StandardParagraphStyle StandardStyle ()
 standardStyleTest = do
     paragraph $ do
@@ -334,8 +334,8 @@ standardStyleTest = do
         txt $ "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate "
         txt $ "velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
         txt $ "proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
- 
-testText :: TM StandardParagraphStyle StandardStyle ()      
+
+testText :: TM StandardParagraphStyle StandardStyle ()
 testText = do
         paragraph $ do
             --txt $ "Lorem ipsum dolor sit amet, consectetur adipisicing elit"
@@ -345,8 +345,8 @@ testText = do
             txt $ "irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
             txt $ "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia "
             txt $ "deserunt mollit anim id est laborum."
-            
-testBreakText :: TM StandardParagraphStyle StandardStyle ()      
+
+testBreakText :: TM StandardParagraphStyle StandardStyle ()
 testBreakText = do
         paragraph $ do
             txt $ "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor "
@@ -357,7 +357,7 @@ testBreakText = do
             txt $ " in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
             txt $ "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia "
             txt $ "deserunt mollit anim id est laborum."
-                    
+
 typesetTest :: Int -> PDFReference PDFPage -> PDF ()
 typesetTest test page = do
     let simpleText = do
@@ -402,7 +402,7 @@ typesetTest test page = do
               txt $ "renaissance /--/-- mixed in with a little business of "
               txt $ "fashion /--/-- was a great lesson learned on how to throw "
               txt $ "an authentic fashion event. "
-              
+
         normalPar :: Para MyParaStyles ()
         normalPar = do
               txt $ "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
@@ -447,7 +447,7 @@ typesetTest test page = do
                 strokeColor red
                 stroke $ Line 10 300 (10+100) 300
                 displayFormattedText (Rectangle (10 :+ 0) ((10+100) :+ 300)) NormalPara Normal simpleText
-                
+
           1 -> do
               strokeColor red
               stroke $ Line 10 400 (10+maxw) 400
@@ -478,13 +478,13 @@ typesetTest test page = do
               displayFormattedText (Rectangle (10 :+ 300) ((10+maxw) :+ 400)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification Centered
                   testText
-                  
+
               strokeColor red
               stroke $ Rectangle (10 :+ 200) ((10+maxw) :+ 300)
               displayFormattedText (Rectangle (10 :+ 200) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification LeftJustification
                   testText
-              
+
               strokeColor red
               stroke $ Rectangle (10 :+ 100) ((10+maxw) :+ 200)
               displayFormattedText (Rectangle (10 :+ 100) ((10+maxw) :+ 200)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
@@ -494,7 +494,7 @@ typesetTest test page = do
               fillColor blue
               stroke $ Rectangle (10 :+ 0) ((10+maxw) :+ 100)
               drawText $ text (PDFFont Helvetica_Bold 24) 10 100 (toPDFString "Lorem ipsum")
-              stroke $ Line 10 120 (10 + textWidth (PDFFont Helvetica_Bold 24) (toPDFString "Lorem ipsum") ) 120 
+              stroke $ Line 10 120 (10 + textWidth (PDFFont Helvetica_Bold 24) (toPDFString "Lorem ipsum") ) 120
               displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification LeftJustification
                   paragraph $ do
@@ -512,20 +512,20 @@ typesetTest test page = do
                 displayFormattedText (Rectangle (10 :+ 200) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification LeftJustification
                     testBreakText
-                
+
                 strokeColor red
                 stroke $ Rectangle (10 :+ 100) ((10+maxw) :+ 200)
                 displayFormattedText (Rectangle (10 :+ 100) ((10+maxw) :+ 200)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification RightJustification
                     testBreakText
-                    
+
                 strokeColor red
                 stroke $ Rectangle (10 :+ 0) ((10+maxw) :+ 100)
                 displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification FullJustification
                     testBreakText
           _ -> displayFormattedText (Rectangle (0 :+ 300) ((10+maxw) :+ 300)) NormalPara Normal myText
-     
+
 textBoxes :: Draw ()
 textBoxes = do
     let x = 230
@@ -547,78 +547,78 @@ textBoxes = do
     strokeColor red
     stroke r
     return ()
-                                       
+
 testAll :: JpegFile -> PDF ()
 testAll jpg = do
     page1 <- addPage Nothing
     newSection (toPDFString "Typesetting") Nothing Nothing $ do
      newSection (toPDFString "Normal text") Nothing Nothing $ do
         typesetTest 1 page1
-     
+
      page2 <- addPage Nothing
      newSection (toPDFString "Debug text") Nothing Nothing $ do
             typesetTest 2 page2
-          
+
      page3 <- addPage Nothing
      newSection (toPDFString "Circle text") Nothing Nothing $ do
             typesetTest 3 page3
-          
+
      page3a <- addPage Nothing
      newSection (toPDFString "Standard styles") Nothing Nothing $ do
             typesetTest 4 page3a
-            
+
      page3b <- addPage Nothing
      newSection (toPDFString "Justifications") Nothing Nothing $ do
             typesetTest 5 page3b
-            
+
      page3d <- addPage Nothing
      newSection (toPDFString "New lines") Nothing Nothing $ do
             typesetTest 6 page3d
-          
+
      page3c <- addPage Nothing
      newSection (toPDFString "Container") Nothing Nothing $ do
             containerTest page3c (Rectangle (10 :+ 300)  (100 :+ 100)) testText
             containerTest page3c (Rectangle (210 :+ 300) (200 :+ 100)) $ do
                 setJustification Centered
                 testText
-        
+
     page4 <- addPage Nothing
     newSection (toPDFString "Shapes") Nothing Nothing $ do
-        
+
       newSection (toPDFString "Geometry") Nothing Nothing $ do
          drawWithPage page4 $ do
-           geometryTest 
-           
+           geometryTest
+
       page5 <- addPage Nothing
       newSection (toPDFString "Line style") Nothing Nothing $ do
           drawWithPage page5 $ do
             lineStyle
-            
+
       page6 <- addPage Nothing
       newSection (toPDFString "Object reuse") Nothing Nothing $ do
            r <- createPDFXForm 0 0 200 200 lineStyle
            drawWithPage page6 $ do
                 drawXObject r
-            
+
     page7 <- addPage Nothing
     newSectionWithPage (toPDFString "Painting") Nothing Nothing page7 $ do
      newSection (toPDFString "Patterns") Nothing Nothing $ do
         patternTest page7
-        
+
      page8 <- addPage Nothing
      newSection (toPDFString "Shading") Nothing Nothing $ do
         drawWithPage page8 $ do
           shadingTest
-          
+
     page9 <- addPage Nothing
     newSection (toPDFString "Media") Nothing Nothing $ do
-      newSection (toPDFString "image") Nothing Nothing $ do   
-           testImage jpg page9  
-           
+      newSection (toPDFString "image") Nothing Nothing $ do
+           testImage jpg page9
+
     page10 <- addPage Nothing
     newSection (toPDFString "Annotations") Nothing Nothing $ do
           testAnnotation page10
-          
+
     page11 <- addPage Nothing
     newSection (toPDFString "Text encoding") Nothing Nothing $ do
       drawWithPage page11 $ do
@@ -629,13 +629,12 @@ testAll jpg = do
     newSection (toPDFString "Text box") Nothing Nothing $ do
       drawWithPage page12 $ do
         textBoxes
-    
-        
+
+
 main :: IO()
 main = do
     let rect = PDFRect 0 0 600 400
-    Right jpg <- readJpegFile "logo.jpg"  
+    Right jpg <- readJpegFile "logo.jpg"
     runPdf "demo.pdf" (standardDocInfo { author=toPDFString "alpheccar", compressed = False}) rect $ do
         testAll jpg
     --print $ charWidth (PDFFont Times_Roman 1) '('
-     

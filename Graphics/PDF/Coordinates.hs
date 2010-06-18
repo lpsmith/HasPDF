@@ -80,7 +80,7 @@ instance Num Matrix where
     --  Matrix addition
     (+) (Matrix ma mb mc) (Matrix na nb nc) =
          Matrix (ma+na)  (mb+nb)  (mc+nc)
-    (*) m (Matrix na nb nc) =
+    (*) (Matrix na nb nc) m =
          Matrix (transform0 m na) (transform0 m nb) (transform m nc)
     negate (Matrix ma mb mc)  =  Matrix  (-ma)  (-mb)  (-mc)
     abs = error "Graphics.PDF.Coordinates:  abs :: Matrix -> Matrix  is not defined"
