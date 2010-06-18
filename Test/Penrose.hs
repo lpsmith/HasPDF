@@ -24,16 +24,16 @@ data Tile = A | B  | A' | B'
 tilea :: PDFFloat -> Tile -> Int -> Draw ()
 tilea angle k n = withNewContext $ do
     applyMatrix (translate (width :+ 0))
-    applyMatrix (rotate . Degree $ angle)
-    applyMatrix (scale (1/golden) (1/golden))
+    applyMatrix (rotate . degree $ angle)
+    applyMatrix (scale (1/golden :+ 1/golden))
     divide (n-1) k 
 
 
 tileb :: PDFFloat -> Tile -> Int ->  Draw ()
 tileb angle k n = withNewContext $ do
     applyMatrix (translate ((width*golden) :+ 0))
-    applyMatrix (rotate . Degree $ angle)
-    applyMatrix (scale (1/golden) (1/golden))
+    applyMatrix (rotate . degree $ angle)
+    applyMatrix (scale (1/golden :+ 1/golden))
     divide (n-1) k
 
 
@@ -77,7 +77,7 @@ b s = do
 
 b' :: PDFFloat  -> Draw () 
 b' s = withNewContext $ do 
-          applyMatrix (scale 1 (-1))
+          applyMatrix (scale (1 :+ (-1)))
           b s
 
 
@@ -96,7 +96,7 @@ a s = do
 
 a' :: PDFFloat  -> Draw () 
 a' s = withNewContext $ do
-           applyMatrix (scale 1 (-1))
+           applyMatrix (scale (1 :+ (-1)))
            a s
 
 penrose :: PDF ()  
@@ -105,7 +105,7 @@ penrose  =  do
     newSection (toPDFString "Penrose") Nothing Nothing $ do
         drawWithPage page $ do
             applyMatrix (translate (20 :+ 5))
-            applyMatrix (rotate . Degree $ 36) 
+            applyMatrix (rotate . degree $ 36) 
             let r = 4
             divide r B 
             divide r B'

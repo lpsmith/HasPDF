@@ -69,7 +69,6 @@ module Graphics.PDF.Draw(
  , getRgbColor
  , emptyDrawState
  , Matrix(..)
- , identity
  , applyMatrix
  , currentMatrix
  , multiplyCurrentMatrixWith
@@ -236,7 +235,7 @@ supplyName = do
 emptyDrawState :: Int -> DrawState
 emptyDrawState ref = 
     let names = (map (("O" ++ (show ref)) ++ ) $ [replicate k ['a'..'z'] | k <- [1..]] >>= sequence) in
-    DrawState names emptyRsrc M.empty M.empty M.empty M.empty emptyDictionary []  M.empty M.empty M.empty [identity]
+    DrawState names emptyRsrc M.empty M.empty M.empty M.empty emptyDictionary []  M.empty M.empty M.empty [1]
   
 -- | Execute the drawing commands to get a new state and an uncompressed PDF stream
 runDrawing :: Draw a -> DrawEnvironment -> DrawState -> (a,DrawState,BU.Builder)
@@ -276,7 +275,7 @@ currentMatrix = gets matrix >>= return . head
 withNewContext :: Draw a -> Draw a
 withNewContext m = do
     tell . serialize $ "\nq"
-    pushMatrixStack identity
+    pushMatrixStack 1
     a <- m
     popMatrixStack
     tell . serialize $ "\nQ"
@@ -720,7 +719,7 @@ instance PdfResourceObject PDFShading where
 
 -- | Apply a transformation matrix to the current coordinate frame
 applyMatrix :: Matrix -> Draw ()
-applyMatrix m@(Matrix a b c d e f)  = do
+applyMatrix m@(Matrix (a :+ b) (c :+ d) (e :+ f))  = do
     multiplyCurrentMatrixWith m
     tell . mconcat $[ serialize '\n'
                     , toPDF a

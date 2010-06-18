@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -309,7 +309,7 @@ data PDFJpeg
 instance PDFXObject PDFJpeg where
     drawXObject a = withNewContext $ do
             (width,height) <- bounds a
-            applyMatrix (scale width height)
+            applyMatrix (scale (width :+ height))
             privateDrawXObject a
         
 instance PdfObject PDFJpeg where

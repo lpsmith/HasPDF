@@ -259,12 +259,11 @@ curveto = addBezierCubic
 
 -- | Approximate a circular arc by one cubic bezier curve.
 -- larger arc angles mean larger distortions
-arcto :: Angle   -- ^ Extent of arc
-      -> Point   -- ^ Center of arc
+arcto :: Radian   -- ^ Extent of arc
+      -> Point    -- ^ Center of arc
       -> Draw ()
-arcto extent 
-    = let theta = toRadian extent
-          kappa = 4 / 3 * tan (theta / 4)
+arcto theta
+    = let kappa = 4 / 3 * tan (theta / 4)
           cis_theta = cis theta
           rot90 (x :+ y) = ((-y) :+ x)
        in if theta == 0

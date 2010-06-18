@@ -276,7 +276,7 @@ rise v = PDFText $ do
 
 -- | Set the text transformation matrix
 setTextMatrix :: Matrix -> PDFText()
-setTextMatrix (Matrix a b c d e f) = 
+setTextMatrix (Matrix (a :+ b) (c :+ d) (e :+ f)) = 
     tell . mconcat $[ serialize '\n'
                     , toPDF a
                     , serialize ' '

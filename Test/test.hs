@@ -93,21 +93,21 @@ testAnnotation p = do
       strokeColor green
       stroke $ Line 0 0 100 0
       withNewContext $ do
-          applyMatrix $ rotate (Degree (-20))
+          applyMatrix $ rotate (degree (-20))
           strokeColor $ Rgb 1 1 0
           stroke $ Line 0 0 100 0
           applyMatrix $ translate (50 :+ 50)
           strokeColor blue
           stroke $ Line 0 0 100 0
           withNewContext $ do
-            applyMatrix $ rotate (Degree 45)
+            applyMatrix $ rotate (degree 45)
             r
             strokeColor black
             stroke $ Line 0 0 100 0
     p3 <- addPage Nothing
     drawWithPage p3 $ do
      withNewContext $ do
-        applyMatrix $ scale 3 1
+        applyMatrix $ scale (3 :+ 1)
         r
  where r = do
         strokeColor red
@@ -125,15 +125,15 @@ textTest = do
               
 testImage ::  JpegFile -> PDFReference PDFPage -> PDF ()
 testImage jpgf page =  do
-    jpg <- createPDFJpeg jpgf
+    jpg <- createPDFJpeg jpg
     drawWithPage page $ do
       withNewContext $ do
           setFillAlpha 0.4
           drawXObject jpg
       withNewContext $ do
-           applyMatrix $ rotate (Degree 20)
+           applyMatrix $ rotate (degree 20)
            applyMatrix $ translate (200 :+ 200)
-           applyMatrix $ scale 2 2
+           applyMatrix $ scale (2 :+ 2)
            drawXObject jpg
            
 
@@ -205,7 +205,7 @@ instance Style MyParaStyles where
             fillColor $ Rgb 0.8 1.0 0.8
             fill p
             withNewContext $ do
-              --applyMatrix . rotate . Degree $ angle
+              --applyMatrix . rotate . degree $ angle
               drawWord
             return ()
 

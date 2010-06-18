@@ -1,16 +1,16 @@
-Name: HPDF
-Version: 1.4.2
+Name: HasPDF
+Version: 0.1
 cabal-version: >=1.6
 License: LGPL
 License-file:LICENSE
-Copyright: Copyright (c) 2007-2008, alpheccar
+Copyright: Copyright (c) 2007-2008, alpheccar,  Copyright (c) 2010 Leon P Smith
 category: Graphics
 synopsis: Generation of PDF documents
-maintainer: misc@NOSPAMalpheccar.org
+maintainer: Leon P Smith <leon@melding-monads.com>
 build-type: Simple
-tested-with: GHC==6.8.1, GHC==6.10.1
-homepage: http://www.alpheccar.org
-description: A PDF library with support for several pages, page transitions, outlines, annotations, compression, colors, shapes, patterns, jpegs, fonts, typesetting ...
+--tested-with: GHC==6.8.1, GHC==6.10.1
+--homepage: http://www.alpheccar.org
+description: I can has PDF?
 extra-source-files:
   c/ctext.h
   c/metrics.h
