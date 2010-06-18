@@ -298,7 +298,7 @@ data TextDrawingState = StartText -- ^ Send PDF commands needed to start a text
                       deriving(Eq)
 
 instance (Style s) => DisplayableBox (HBox s) where
-     strokeBox a@(HBox _ _ _ l) xy = do
+     strokeBox a@(HBox _ _he _de l) xy = do
          let he = boxHeight a
              de = boxDescent a
          drawLineOfHboxes he de l xy

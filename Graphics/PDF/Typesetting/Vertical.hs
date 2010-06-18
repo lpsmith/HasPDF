@@ -51,7 +51,7 @@ defaultVerState s = VerState { baselineskip = (12,0.17,0.0)
 -- | A line of hboxes with an adjustement ratio required to display the text (generate the PDF command to increase space size)
 --data HLine = HLine !PDFFloat ![HBox] deriving(Show)
 
-mkVboxWithRatio :: PDFFloat -- ^ Adjustement ratio
+mkVboxWithRatio :: PDFFloat -- ^ Adjustment ratio
                 -> [VBox ps s]
                 -> VBox ps s
 mkVboxWithRatio _ [] = error "Cannot make an empty vbox"
@@ -65,7 +65,6 @@ mkVboxWithRatio r l =
    in
    -- Add boxes and dilate glues when needing fixing their dimensions after dilatation
    foldr addBox (VBox w h d [] Nothing) l
-
 
 
 dilateVboxes :: PDFFloat -> VBox ps s -> VBox ps s

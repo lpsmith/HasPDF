@@ -80,11 +80,11 @@ class Shape a where
         addShape r
         fillAndStrokePathEO
     
-data Line = Line PDFFloat PDFFloat PDFFloat PDFFloat deriving(Eq)
+data Line = Line !Point !Point deriving(Eq)
 instance Shape Line where
-    addShape (Line x0 y0 x1 y1)= do
-        moveto (x0 :+ y0)
-        lineto (x1 :+ y1)
+    addShape (Line a b)= do
+        moveto a
+        lineto b
     fill _ = error "Can't fill a line !"
     fillAndStroke _ = error "Can't fill a line !"
     fillEO _ = error "Can't fill a line !"
@@ -99,18 +99,18 @@ instance Shape Rectangle where
                         , toPDF (b - a)
                         , serialize " re" ]
  
-data Arc = Arc PDFFloat PDFFloat PDFFloat PDFFloat deriving(Eq)
+data Arc = Arc !Point !Point deriving(Eq)
 instance Shape Arc where
-    addShape (Arc x0 y0 x1 y1) = do
+    addShape (Arc (x0 :+ y0) (x1 :+ y1)) = do
         let height = y1 - y0
             width = x1 - x0
             kappa = 0.5522847498
         beginPath (x0 :+ y0)
-        addBezierCubic ((x0+width*kappa) :+ y0) (x1 :+ (y1-height*kappa)) (x1 :+ y1)
+        curveto ((x0+width*kappa) :+ y0) (x1 :+ (y1-height*kappa)) (x1 :+ y1)
                
-data Ellipse = Ellipse PDFFloat PDFFloat PDFFloat PDFFloat deriving(Eq)
+data Ellipse = Ellipse !Point !Point deriving(Eq)
 instance Shape Ellipse where
-    addShape (Ellipse x0 y0 x1 y1) = do
+    addShape (Ellipse (x0 :+ y0) (x1 :+ y1)) = do
         let xm = (x0+x1)/2.0
             ym = (y0+y1)/2.0
             k = 0.5522847498
@@ -123,9 +123,9 @@ instance Shape Ellipse where
         addBezierCubic ((xm - w) :+ y1) (x0 :+ (ym + h)) (x0 :+ ym)
         addBezierCubic (x0 :+ (ym - h)) ((xm - w) :+ y0) (xm :+ y0)
 
-data RoundRectangle = RoundRectangle PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat deriving(Eq)
+data RoundRectangle = RoundRectangle !PDFFloat !PDFFloat !Point !Point deriving(Eq)
 instance Shape RoundRectangle where
-    addShape (RoundRectangle rw rh x0 y0 x1 y1) = do
+    addShape (RoundRectangle rw rh (x0 :+ y0) (x1 :+ y1)) = do
         let k = 0.5522847498
             h = k*rw
             w = k*rh
@@ -141,9 +141,9 @@ instance Shape RoundRectangle where
         addBezierCubic (x0 :+ (y0+rh - h)) ((x0+rw - w) :+ y0) ((x0+rw) :+ y0)
         addLineToPath ((x1-rw) :+ y0)
         
-data Circle = Circle PDFFloat PDFFloat PDFFloat deriving(Eq)
+data Circle = Circle !Point !Scalar deriving(Eq)
 instance Shape Circle where
-    addShape (Circle x0 y0 r) = addShape (Ellipse (x0-r) (y0-r) (x0+r) (y0+r) )
+    addShape (Circle c r) = let r' = r :+ r in addShape (Ellipse (c - r') (c + r'))
                 
 newtype Polygon = Polygon [Point]
 instance Shape Polygon where

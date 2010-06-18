@@ -30,8 +30,8 @@ fontDebug f t = do
          startNewLine
          displayText $ toPDFString "Another little test"
      strokeColor $ Rgb 1 0 0
-     stroke $ Line 10 200 612 200
-     fill $ Circle 10 200 10
+     stroke $ Line (10 :+ 200) (612 :+ 200)
+     fill $ Circle (10 :+ 200) 10
      stroke $ Rectangle (10 :+ (200.0 - (getDescent f))) ((10.0 + textWidth f t) :+ (200.0 - getDescent f + getHeight f))
 
 
@@ -40,8 +40,8 @@ geometryTest  = do
         strokeColor red
         stroke $ Rectangle 0 (200 :+ 100)
         fillColor blue
-        fill $ Ellipse 100 100 300 200
-        fillAndStroke $ RoundRectangle 32 32 200 200 600 400
+        fill $ Ellipse (100 :+ 100) (300 :+ 200)
+        fillAndStroke $ RoundRectangle 32 32 (200 :+ 200) (600 :+ 400)
 
 lineStyle ::Draw ()
 lineStyle  = do
@@ -54,7 +54,7 @@ lineStyle  = do
 shadingTest :: Draw ()
 shadingTest  = do
      paintWithShading (RadialShading 0 0 50 0 0 600 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Rectangle 0 (300 :+ 300))
-     paintWithShading (AxialShading 300 300 600 400 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Ellipse 300 300 600 400)
+     paintWithShading (AxialShading 300 300 600 400 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Ellipse (300 :+ 300) (600 :+ 400))
 
 
 patternTest :: PDFReference PDFPage -> PDF ()
@@ -64,16 +64,16 @@ patternTest page = do
      drawWithPage page $ do
          strokeColor green
          setUncoloredFillPattern p (Rgb 1 0 0)
-         fillAndStroke $ Ellipse 0 0 300 300
+         fillAndStroke $ Ellipse 0 (300 :+ 300)
          setColoredFillPattern cp
-         fillAndStroke $ Ellipse 300 300 600 400
+         fillAndStroke $ Ellipse (300 :+ 300) (600 :+ 400)
 
  where
        pattern = do
-           stroke (Ellipse 0 0 100 50)
+           stroke (Ellipse 0 (100 :+ 50))
        cpattern = do
            strokeColor (Rgb 0 0 1)
-           stroke (Ellipse 0 0 100 50)
+           stroke (Ellipse 0 (100 :+ 50))
 
 testAnnotation ::PDFReference PDFPage -> PDF ()
 testAnnotation p = do
@@ -88,22 +88,22 @@ testAnnotation p = do
     p2 <- addPage Nothing
     drawWithPage p2 $ do
       strokeColor red
-      stroke $ Line 0 0 100 0
+      stroke $ Line 0 100
       applyMatrix $ translate (100 :+ 0)
       strokeColor green
-      stroke $ Line 0 0 100 0
+      stroke $ Line 0 100
       withNewContext $ do
           applyMatrix $ rotate (degree (-20))
           strokeColor $ Rgb 1 1 0
-          stroke $ Line 0 0 100 0
+          stroke $ Line 0 100
           applyMatrix $ translate (50 :+ 50)
           strokeColor blue
-          stroke $ Line 0 0 100 0
+          stroke $ Line 0 100
           withNewContext $ do
             applyMatrix $ rotate (degree 45)
             r
             strokeColor black
-            stroke $ Line 0 0 100 0
+            stroke $ Line 0 100
     p3 <- addPage Nothing
     drawWithPage p3 $ do
      withNewContext $ do
@@ -229,10 +229,10 @@ crazyWord r@(Rectangle (xa :+ ya) (xb :+ yb)) DrawWord d = do
     d
     strokeColor $ Rgb 0 0 1
     let m = (ya+yb)/2.0
-    stroke $ Line xa m xb m
+    stroke $ Line (xa :+ m) (xb :+ m)
 crazyWord (Rectangle (xa :+ ya) (xb :+ yb)) DrawGlue _ = do
     fillColor $ Rgb 0 0 1
-    fill (Circle ((xa+xb)/2.0) ((ya+yb)/2.0) ((xb-xa)/2.0))
+    fill (Circle (((xa+xb)/2.0):+ ((ya+yb)/2.0)) ((xb-xa)/2.0))
 
 
 
@@ -445,16 +445,15 @@ typesetTest test page = do
       case test of
           0 -> do
                 strokeColor red
-                stroke $ Line 10 300 (10+100) 300
+                stroke $ Line (10 :+ 300) ((10+100) :+ 300)
                 displayFormattedText (Rectangle (10 :+ 0) ((10+100) :+ 300)) NormalPara Normal simpleText
-
           1 -> do
               strokeColor red
-              stroke $ Line 10 400 (10+maxw) 400
+              stroke $ Line (10 :+ 400) ((10+maxw) :+ 400)
               displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 400)) NormalPara Normal myText
           2 -> do
               strokeColor red
-              stroke $ Line 10 300 (10+maxw) 300
+              stroke $ Line (10 :+ 300) ((10+maxw) :+ 300)
               displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 300)) NormalPara Normal debugText
           3 -> do
               let r = (Rectangle (10 :+ 200) ((10+maxw) :+ 300))
@@ -494,7 +493,7 @@ typesetTest test page = do
               fillColor blue
               stroke $ Rectangle (10 :+ 0) ((10+maxw) :+ 100)
               drawText $ text (PDFFont Helvetica_Bold 24) (10 :+ 100) (toPDFString "Lorem ipsum")
-              stroke $ Line 10 120 (10 + textWidth (PDFFont Helvetica_Bold 24) (toPDFString "Lorem ipsum") ) 120
+              stroke $ Line (10 :+ 120) ((10 + textWidth (PDFFont Helvetica_Bold 24) (toPDFString "Lorem ipsum") ) :+ 120)
               displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification LeftJustification
                   paragraph $ do
@@ -533,7 +532,7 @@ textBoxes = do
         w = 220
         h = 200
     fillColor blue
-    fill $ Circle x y 5
+    fill $ Circle (x :+ y) 5
     let (r,b) = drawTextBox x y w h S NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                 setJustification FullJustification
                 paragraph $ do
