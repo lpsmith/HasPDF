@@ -185,15 +185,15 @@ drawText t = do
    addFontRsrc f = modifyStrict $ \s -> s { rsrc = addResource (PDFName "Font") (PDFName (show f)) (toRsrc (PDFFont f 0)) (rsrc s)}
    
 -- | Set position for the text beginning
-textStart :: PDFFloat
-          -> PDFFloat
+textStart :: Point 
           -> PDFText ()
-textStart x y = tell . mconcat  $ [ serialize '\n'
-                                  , toPDF x
-                                  , serialize ' '
-                                  , toPDF y
-                                  , serialize " Td"
-                                  ]
+textStart (x :+ y) 
+  = tell . mconcat  $ [ serialize '\n'
+                      , toPDF x
+                      , serialize ' '
+                      , toPDF y
+                      , serialize " Td"
+                      ]
  --writeCmd $ "\n" ++ (show x) ++ " " ++ (show y) ++ " Td"         
 
 -- | Display some text
@@ -294,12 +294,11 @@ setTextMatrix (Matrix (a :+ b) (c :+ d) (e :+ f)) =
     
 -- | Utility function to quickly display one line of text
 text :: PDFFont
-     -> PDFFloat
-     -> PDFFloat
+     -> Point
      -> PDFString
      -> PDFText ()
-text f x y t = do
+text f xy t = do
     setFont f
-    textStart x y
+    textStart xy
     displayText t
     

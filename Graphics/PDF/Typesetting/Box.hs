@@ -42,9 +42,9 @@ instance Box DrawBox where
     boxDescent _ = 0
     
 instance DisplayableBox DrawBox where
-    strokeBox (DrawBox a) x y = do
+    strokeBox (DrawBox a) xy = do
         withNewContext $ do
-            applyMatrix $ translate (x :+ y)
+            applyMatrix $ translate xy
             a
     
 instance Show DrawBox where
@@ -128,9 +128,8 @@ instance Box BoxDimension where
 -- | A box that can be displayed
 class DisplayableBox a where
      -- | Draw a box
-     strokeBox :: a -- ^ The box
-               -> PDFFloat -- ^ Horizontal position
-               -> PDFFloat -- ^ Vertical position (top of the box and NOT baseline)
+     strokeBox :: a      -- ^ The box
+               -> Point  -- ^ position,  vertical to top of the box and NOT baseline
                -> Draw ()
     
 instance Box AnyBox where

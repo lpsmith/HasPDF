@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -67,15 +67,15 @@ module Graphics.PDF.Typesetting(
   , drawTextBox
   -- * Settings (similar to TeX ones)
   -- ** Line breaking settings
-  , setFirstPassTolerance 
+  , setFirstPassTolerance
   , setSecondPassTolerance
-  , setHyphenPenaltyValue 
+  , setHyphenPenaltyValue
   , setFitnessDemerit
   , setHyphenDemerit
   , setLinePenalty
-  , getFirstPassTolerance 
+  , getFirstPassTolerance
   , getSecondPassTolerance
-  , getHyphenPenaltyValue 
+  , getHyphenPenaltyValue
   , getFitnessDemerit
   , getHyphenDemerit
   , getLinePenalty
@@ -89,7 +89,7 @@ module Graphics.PDF.Typesetting(
   , getLineSkip
   , module Graphics.PDF.Typesetting.StandardStyle
   ) where
-  
+
 import Graphics.PDF.LowLevel.Types
 import Graphics.PDF.Text
 import Graphics.PDF.Draw
@@ -112,7 +112,7 @@ displayFormattedText :: (ParagraphStyle ps s) => Rectangle -- ^ Text area
                      -> s -- ^ Default horizontal style
                      -> TM ps s a -- ^ Typesetting monad
                      -> Draw a -- ^ Draw monad
-displayFormattedText (Rectangle (xa :+ ya) (xb :+ yb)) defaultVStyle defaultHStyle t  = 
+displayFormattedText (Rectangle (xa :+ ya) (xb :+ yb)) defaultVStyle defaultHStyle t  =
     do
     --withNewContext $ do
     --    addShape $ Rectangle (xa-1) y' (xb+1) y''
@@ -123,7 +123,7 @@ displayFormattedText (Rectangle (xa :+ ya) (xb :+ yb)) defaultVStyle defaultHSty
             (d,_,_) = fillContainer (pageSettings s') c boxes
         d
         return a
- 
+
 -- | Return the list of Vboxes for a text
 getBoxes :: (ParagraphStyle ps s) => ps -- ^ default vertical style
          -> s -- ^ Default horizontal style
@@ -136,19 +136,19 @@ getBoxes defaultVStyle defaultHStyle t  =
 -- | Add a penalty
 addPenalty :: Int -> Para s ()
 addPenalty f = tell $ [penalty f]
-    
+
 defaultTmState :: (ParagraphStyle ps s) => ps -> s -> TMState ps s
 defaultTmState s' s = TMState { tmStyle = s
                               , paraSettings = defaultBreakingSettings
                               , pageSettings = defaultVerState s'
                               }
-    
+
 data TMState ps s = TMState { tmStyle :: !s
                             , paraSettings :: !BRState
                             , pageSettings :: !(VerState ps)
                             }
-                       
-newtype TM ps s a = TM { unTM :: RWS () [VBox ps s] (TMState ps s) a} 
+
+newtype TM ps s a = TM { unTM :: RWS () [VBox ps s] (TMState ps s) a}
 #ifndef __HADDOCK__
   deriving(Monad,MonadWriter [VBox ps s], MonadState (TMState ps s), Functor)
 #else
@@ -158,7 +158,7 @@ instance MonadState (TMState ps s) TM
 instance Functor TM
 #endif
 
-newtype Para s a = Para { unPara :: RWS BRState [Letter s] s a} 
+newtype Para s a = Para { unPara :: RWS BRState [Letter s] s a}
 #ifndef __HADDOCK__
   deriving(Monad,MonadWriter [Letter s], MonadReader BRState, MonadState s, Functor)
 #else
@@ -173,78 +173,78 @@ instance MonadReader BRState Para
 class (Style s, Monad m) => MonadStyle s m | m -> s where
     -- | Set the current text style
     setStyle :: s -> m ()
-    
+
     -- | Get the current text style
     currentStyle :: m s
-    
+
     -- | Add a box using the current mode (horizontal or vertical. The current style is always applied to the added box)
-    addBox :: (Show a, DisplayableBox a, Box a) => a 
+    addBox :: (Show a, DisplayableBox a, Box a) => a
            -> PDFFloat -- ^ Width
            -> PDFFloat -- ^ Height
            -> PDFFloat -- ^ Descent
            -> m ()
-    
+
     -- | Add a glue using the current style
     glue :: PDFFloat -- ^ Size of glue (width or height depending on the mode)
          -> PDFFloat -- ^ Dilatation factor
          -> PDFFloat -- ^ Compression factor
          -> m ()
-    
+
     -- | Add a glue with no style (it is just a translation)
-    unstyledGlue :: PDFFloat -- ^ Size of glue (width or height depending on the mode) 
-                 -> PDFFloat -- ^ Dilatation factor 
-                 -> PDFFloat -- ^ Compression factor 
+    unstyledGlue :: PDFFloat -- ^ Size of glue (width or height depending on the mode)
+                 -> PDFFloat -- ^ Dilatation factor
+                 -> PDFFloat -- ^ Compression factor
                  -> m ()
-    
-    
+
+
 instance Style s => MonadStyle s (TM ps s) where
     --  Set style of text
     setStyle f = modifyStrict $ \s -> s {tmStyle = f}
 
     --  Get current text style
     currentStyle = gets tmStyle
-    
+
     --  Add a box to the stream in vertical mode
     addBox a w h d = do
         style <- getParaStyle
         tell $ ([SomeVBox 0 (w,h,d) (AnyBox a) (Just style)])
-    
+
     --  Add a glue
     glue h y z = do
         style <- getParaStyle
         tell $ [vglue (Just style) h y z 0 0]
-        
+
     --  Add a glue
     unstyledGlue h y z = do
         tell $ [vglue Nothing h y z 0 0]
-    
+
 instance Style s => MonadStyle s (Para s) where
     --  Set style of text
     setStyle f = put $! f
 
     --  Get current text style
     currentStyle = get
-        
+
     --  Add a box to the stream in horizontal mode
     addBox a w h d = do
         f <- currentStyle
         addLetter . mkLetter (w,h,d) (Just f) $ a
-    
+
     --  Add a glue
     glue w y z = do
         f <- currentStyle
         tell $ [glueBox (Just f) w y z]
-        
+
     --  Add a glue
     unstyledGlue w y z = do
         tell $ [glueBox Nothing w y z]
-        
+
 -- | For a newline and end the current paragraph
 forceNewLine :: Style s => Para s ()
 forceNewLine = do
     endPara
     startPara
-    
+
 -- | End the current paragraph with or without using the same style
 endFullyJustified :: Style s => Bool -- ^ True if we use the same style to end a paragraph. false for an invisible style
              -> Para s ()
@@ -255,7 +255,7 @@ endFullyJustified r = do
         else
             tell $ [glueBox Nothing 0 10000.0 0]
     addPenalty (-infinity)
-     
+
 endPara :: Style s => Para s ()
 endPara = do
     style <- ask
@@ -265,9 +265,9 @@ endPara = do
       Centered -> do
         addLetter (glueBox (Just theStyle) 0 (centeredDilatationFactor*w) 0)
         addLetter (penalty (-infinity))
-      RightJustification -> addPenalty (-infinity) 
+      RightJustification -> addPenalty (-infinity)
       _ -> endFullyJustified False
-      
+
 startPara :: Style s => Para s ()
 startPara = do
     style <- ask
@@ -283,7 +283,7 @@ startPara = do
         addLetter $ penalty infinity
         addLetter (glueBox (Just theStyle) 0 (rightDilatationFactor*w) 0)
       _ -> return ()
-      
+
 -- | Run a paragraph. Style changes are local to the paragraph
 runPara :: Style s => Para s a -> TM ps s a
 runPara m = do
@@ -299,7 +299,7 @@ runPara m = do
         x <- m
         endPara
         return x
-    
+
 -- | Get the current paragraph style
 getParaStyle :: TM ps s ps
 getParaStyle = gets pageSettings >>= TM . return . currentParagraphStyle
@@ -324,13 +324,13 @@ paragraph = runPara
 myWords' :: String -> Maybe (String, String)
 myWords' l  | null l = Nothing
             | otherwise = if null h then Just (h', t') else Just (" ", t)
-    where 
+    where
         (h, t) = span isSpace l
         (h', t') = span (not . isSpace) l
-   
+
 -- | Split a sentence into words keeping the space but shortening them to 1 space
-myWords :: String -> [String]     
-myWords l = concatMap onlyWord . unfoldr myWords' $ l 
+myWords :: String -> [String]
+myWords l = concatMap onlyWord . unfoldr myWords' $ l
  where
   onlyWord s = let (w,p) = span isAlpha s in
      case (null w,null p) of
@@ -338,10 +338,10 @@ myWords l = concatMap onlyWord . unfoldr myWords' $ l
          (False,True) -> [w]
          (True,False) -> [p]
          (False,False) -> [w,p]
-    
+
 addHyphens :: HyphenationDatabase -> String -> PDFString
 addHyphens db f = toPDFString . concat . map (concat . intersperse "/-" . hyphenate db) . myWords $ f
-    
+
 -- | Add a text line
 txt :: Style s => String -> Para s ()
 txt t = do
@@ -357,12 +357,12 @@ kern w  = do
 
 setBaseLineSkip :: PDFFloat -> PDFFloat -> PDFFloat -> TM ps s ()
 setBaseLineSkip w y z = modifyStrict $ \s -> s {pageSettings = (pageSettings s){baselineskip = (w,y,z)}}
- 
+
 getBaseLineSkip :: TM ps s (PDFFloat,PDFFloat,PDFFloat)
 getBaseLineSkip = do
     s <- gets pageSettings
     return (baselineskip s)
-    
+
 setLineSkipLimit :: PDFFloat  -> TM ps s ()
 setLineSkipLimit l = modifyStrict $ \s -> s {pageSettings = (pageSettings s){lineskiplimit=l}}
 
@@ -374,7 +374,7 @@ setLineSkip w y z = modifyStrict $ \s -> s {pageSettings = (pageSettings s){line
 
 getLineSkip :: TM ps s (PDFFloat,PDFFloat,PDFFloat)
 getLineSkip = gets pageSettings >>= return . lineskip
-    
+
 setFirstPassTolerance :: PDFFloat -> TM ps s ()
 setFirstPassTolerance x = modifyStrict $ \s -> s {paraSettings = (paraSettings s){firstPassTolerance = x}}
 
@@ -404,10 +404,10 @@ setHyphenDemerit x = modifyStrict $ \s -> s {paraSettings = (paraSettings s){fla
 
 getHyphenDemerit :: TM ps s PDFFloat
 getHyphenDemerit = gets paraSettings >>= return . flagged_demerit
-  
+
 setLinePenalty :: PDFFloat -> TM ps s ()
 setLinePenalty x = modifyStrict $ \s -> s {paraSettings = (paraSettings s){line_penalty = x}}
-                   
+
 getLinePenalty :: TM ps s PDFFloat
 getLinePenalty = gets paraSettings >>= return . line_penalty
 
@@ -424,7 +424,7 @@ setJustification j = modifyStrict $ \s -> s {paraSettings = (paraSettings s){cen
 data Orientation = E | W | N | S | NE | NW | SE | SW deriving(Eq,Show)
 
 -- | Draw a text box with relative position. Useful for labels
-drawTextBox :: (ParagraphStyle ps s, Style s) 
+drawTextBox :: (ParagraphStyle ps s, Style s)
             => PDFFloat -- ^ x
             -> PDFFloat -- ^ y
             -> PDFFloat -- ^ width limit
@@ -434,7 +434,7 @@ drawTextBox :: (ParagraphStyle ps s, Style s)
             -> s -- ^ Default horizontal style
             -> TM ps s a -- ^ Typesetting monad
             -> (Rectangle,Draw ())
-drawTextBox x y w h ori ps p t = 
+drawTextBox x y w h ori ps p t =
     let b = getBoxes ps p t
         sh = styleHeight p
         c = mkContainer 0 0 w h sh

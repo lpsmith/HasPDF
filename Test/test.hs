@@ -23,7 +23,7 @@ fontDebug :: PDFFont -> PDFString -> Draw ()
 fontDebug f t = do
      drawText $ do
          setFont f
-         textStart 10 200.0
+         textStart (10 :+ 200.0)
          leading $ getHeight f
          renderMode FillText
          displayText t
@@ -112,7 +112,7 @@ testAnnotation p = do
  where r = do
         strokeColor red
         newAnnotation (URLLink (toPDFString "Go to my blog") [0,0,200,100] "http://www.alpheccar.org" True)
-        drawText $ text (PDFFont Times_Roman 12) 10 30 (toPDFString "Go to my blog")
+        drawText $ text (PDFFont Times_Roman 12) (10 :+ 30) (toPDFString "Go to my blog")
         stroke $ Rectangle 0 (200 :+ 100)
         newAnnotation (TextAnnotation (toPDFString "Key annotation") [100,100,130,130] Key)
 
@@ -284,7 +284,7 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
                     fillColor black
                     drawText $ do
                         renderMode AddToClip
-                        textStart 0 0
+                        textStart (0 :+ 0)
                         setFont f
                         displayText (toPDFString [c])
                     paintWithShading (AxialShading 0 (- getDescent f) w' (getHeight f - getDescent f) (Rgb 1 0 0) (Rgb 0 0 1)) (addShape charRect)
@@ -493,7 +493,7 @@ typesetTest test page = do
               strokeColor red
               fillColor blue
               stroke $ Rectangle (10 :+ 0) ((10+maxw) :+ 100)
-              drawText $ text (PDFFont Helvetica_Bold 24) 10 100 (toPDFString "Lorem ipsum")
+              drawText $ text (PDFFont Helvetica_Bold 24) (10 :+ 100) (toPDFString "Lorem ipsum")
               stroke $ Line 10 120 (10 + textWidth (PDFFont Helvetica_Bold 24) (toPDFString "Lorem ipsum") ) 120
               displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification LeftJustification

@@ -18,9 +18,9 @@ module Graphics.PDF.Draw(
  , withNewContext
  , DrawState(..)
  , DrawEnvironment(..)
- , readDrawST 
- , writeDrawST 
- , modifyDrawST 
+ , readDrawST
+ , writeDrawST
+ , modifyDrawST
  , DrawTuple()
  , penPosition
  , supplyName
@@ -74,7 +74,7 @@ module Graphics.PDF.Draw(
  , multiplyCurrentMatrixWith
  , PDFGlobals(..)
  ) where
- 
+
 import Data.Maybe
 import Data.Monoid
 
@@ -104,12 +104,12 @@ class AnnotationObject a where
     annotationRect :: a -> [PDFFloat]
     annotationToGlobalCoordinates :: a -> Draw a
     annotationToGlobalCoordinates = return
-    
+
 data AnyAnnotation = forall a.(PdfObject a,AnnotationObject a) => AnyAnnotation a
 
 instance PdfObject AnyAnnotation where
     toPDF (AnyAnnotation a) = toPDF a
-    
+
 instance AnnotationObject AnyAnnotation where
     addAnnotation (AnyAnnotation a) = do
         PDFReference r <- addAnnotation a
@@ -117,7 +117,7 @@ instance AnnotationObject AnyAnnotation where
     annotationType (AnyAnnotation a) = annotationType a
     annotationContent (AnyAnnotation a) = annotationContent a
     annotationRect (AnyAnnotation a) = annotationRect a
-    
+
 
 -- | A PDF color
 data Color = Rgb !Double !Double !Double
@@ -141,7 +141,7 @@ data DrawState = DrawState {
 data DrawEnvironment = DrawEnvironment {
                         streamId :: Int
                      ,  xobjectBoundD :: IM.IntMap (PDFFloat,PDFFloat)
-                     }   
+                     }
 
 data DrawTuple s
    = DrawTuple {  drawEnvironment    :: DrawEnvironment
@@ -149,13 +149,13 @@ data DrawTuple s
                ,  builderRef :: STRef s BU.Builder
                ,  penPosition :: STRef s Point
                }
-    
+
 emptyEnvironment :: DrawEnvironment
 emptyEnvironment = DrawEnvironment 0 IM.empty
 
 class PDFGlobals m where
     bounds :: PDFXObject a => PDFReference a -> m (PDFFloat,PDFFloat)
-    
+
 -- | The drawing monad
 newtype Draw a = Draw {unDraw :: forall s. DrawTuple s -> ST s a }
 
@@ -169,7 +169,7 @@ instance MonadReader DrawEnvironment Draw where
    ask       = Draw $ \env -> return (drawEnvironment env)
    local f m = Draw $ \env -> let drawenv' = f (drawEnvironment env)
                                   env' = env { drawEnvironment = drawenv' }
-                               in unDraw m env' 
+                               in unDraw m env'
 
 instance MonadState DrawState Draw where
     get    = Draw $ \env -> readSTRef  (drawStateRef env)
@@ -192,19 +192,19 @@ instance Functor Draw where
 instance MonadPath Draw
 
 readDrawST :: (forall s. DrawTuple s -> STRef s a) -> Draw a
-readDrawST   f   = Draw $ \env -> readSTRef   (f env) 
+readDrawST   f   = Draw $ \env -> readSTRef   (f env)
 
 writeDrawST :: (forall s. DrawTuple s -> STRef s a) -> a -> Draw ()
-writeDrawST  f x = Draw $ \env -> writeSTRef  (f env) x 
+writeDrawST  f x = Draw $ \env -> writeSTRef  (f env) x
 
 modifyDrawST :: (forall s. DrawTuple s -> STRef s a) -> (a -> a) -> Draw ()
 modifyDrawST f g = Draw $ \env -> modifySTRef (f env) g
 
 -- | A PDF stream object
 data PDFStream = PDFStream !BU.Builder !Bool !(PDFReference PDFLength) !PDFDictionary
-                                   
+
 instance PdfObject PDFStream where
-  toPDF (PDFStream s c l d) = 
+  toPDF (PDFStream s c l d) =
       mconcat   $ [ toPDF dict
                   , serialize "\nstream"
                   , newline
@@ -216,11 +216,11 @@ instance PdfObject PDFStream where
       compressedStream True = if not (pdfDictMember (PDFName "Filter") d) then [(PDFName "Filter",AnyPdfObject $ [AnyPdfObject . PDFName $ "FlateDecode"])] else []
       lenDict = PDFDictionary. M.fromList $ [ (PDFName "Length",AnyPdfObject l)] ++ compressedStream c
       dict = pdfDictUnion lenDict d
-    
+
 -- | An empty drawing
 emptyDrawing :: Draw ()
 emptyDrawing = return ()
-  
+
 -- | is member of the dictionary
 pdfDictMember :: PDFName -> PDFDictionary -> Bool
 pdfDictMember k (PDFDictionary d)  = M.member k d
@@ -231,15 +231,15 @@ supplyName = do
     (x:xs) <- gets supplyNames
     modifyStrict $ \s -> s {supplyNames = xs}
     return x
-    
+
 emptyDrawState :: Int -> DrawState
-emptyDrawState ref = 
+emptyDrawState ref =
     let names = (map (("O" ++ (show ref)) ++ ) $ [replicate k ['a'..'z'] | k <- [1..]] >>= sequence) in
     DrawState names emptyRsrc M.empty M.empty M.empty M.empty emptyDictionary []  M.empty M.empty M.empty [1]
-  
+
 -- | Execute the drawing commands to get a new state and an uncompressed PDF stream
 runDrawing :: Draw a -> DrawEnvironment -> DrawState -> (a,DrawState,BU.Builder)
-runDrawing drawing environment state 
+runDrawing drawing environment state
     = runST $ do
         dRef <- newSTRef state
         bRef <- newSTRef mempty
@@ -248,30 +248,30 @@ runDrawing drawing environment state
                               , drawStateRef    = dRef
                               , builderRef      = bRef
                               , penPosition     = posRef
-                              } 
+                              }
         a <- unDraw drawing tuple
         drawSt <- readSTRef (drawStateRef tuple)
         builder <- readSTRef (builderRef tuple)
         return (a, drawSt, builder)
-     
+
 pushMatrixStack :: Matrix -> Draw ()
 pushMatrixStack m = do
     modifyStrict $ \s -> s {matrix = m : matrix s}
-    
+
 popMatrixStack :: Draw ()
 popMatrixStack = do
     modifyStrict $ \s -> s {matrix = tail (matrix s)}
-    
+
 
 multiplyCurrentMatrixWith :: Matrix -> Draw ()
 multiplyCurrentMatrixWith m' = modifyStrict $ \s -> s {matrix = let (m:l) = matrix s in (m' * m ):l}
 
-    
+
 currentMatrix :: Draw Matrix
 currentMatrix = gets matrix >>= return . head
-      
+
 -- | Draw in a new drawing context without perturbing the previous context
--- that is restored after the draw       
+-- that is restored after the draw
 withNewContext :: Draw a -> Draw a
 withNewContext m = do
     tell . serialize $ "\nq"
@@ -280,7 +280,7 @@ withNewContext m = do
     popMatrixStack
     tell . serialize $ "\nQ"
     return a
-    
+
 -- | Set a resource in the resource dictionary
 setResource :: (Ord a, PdfResourceObject a) => String -- ^ Dict name
             -> a -- ^ Resource value
@@ -296,25 +296,25 @@ setResource dict values oldCache = do
 
 instance PDFGlobals Draw where
     bounds (PDFReference r) = getBoundInDraw r
-    
+
 instance PDFGlobals PDF where
     bounds (PDFReference r) = getBoundInPDF r
-    
+
 -- | A PDF Xobject which can be drawn
 class PDFXObject a where
     drawXObject :: PDFReference a -> Draw ()
-    
+
     privateDrawXObject :: PDFReference a -> Draw ()
     privateDrawXObject (PDFReference r) = do
         xobjectMap <- gets xobjects
         (newName,newMap) <- setResource "XObject" (PDFReference r) xobjectMap
         modifyStrict $ \s -> s { xobjects = newMap }
-        tell . mconcat  $ [ serialize "\n/" 
+        tell . mconcat  $ [ serialize "\n/"
                           , serialize newName
                           , serialize " Do"
                           ]
     drawXObject = privateDrawXObject
-    
+
 -- | An XObject
 data AnyPdfXForm = forall a. (PDFXObject a,PdfObject a) => AnyPdfXForm a
 instance PdfObject AnyPdfXForm where
@@ -328,25 +328,25 @@ instance PdfObject PDFXForm where
     toPDF _ = noPdfObject
 instance PdfResourceObject (PDFReference PDFXForm) where
     toRsrc = AnyPdfObject
-    
+
 instance PdfResourceObject (PDFReference AnyPdfXForm) where
     toRsrc = AnyPdfObject
-    
+
 
 -- | Get the bounds for an xobject
 getBoundInDraw :: Int -- ^ Reference
-         -> Draw (PDFFloat,PDFFloat)  
+         -> Draw (PDFFloat,PDFFloat)
 getBoundInDraw ref = do
     theBounds <- asks xobjectBoundD
     return $ IM.findWithDefault (0.0,0.0) ref theBounds
- 
+
 -- | Get the bounds for an xobject
 getBoundInPDF :: Int -- ^ Reference
-              -> PDF (PDFFloat,PDFFloat)  
+              -> PDF (PDFFloat,PDFFloat)
 getBoundInPDF ref = do
     theBounds <- gets xobjectBound
     return $ IM.findWithDefault (0.0,0.0) ref theBounds
-   
+
 -----------
 --
 -- PDF types
@@ -354,7 +354,7 @@ getBoundInPDF ref = do
 ------------
 
 -- | The PDF Catalog
-data PDFCatalog = PDFCatalog 
+data PDFCatalog = PDFCatalog
                    !(Maybe (PDFReference PDFOutline))
                    !(PDFReference PDFPages)
                    !PDFDocumentPageMode
@@ -374,10 +374,10 @@ data PdfState = PdfState { supplySrc :: !Int -- ^ Supply of unique identifiers
                          , xobjectBound :: !(IM.IntMap (PDFFloat,PDFFloat)) -- ^ Width and height of xobjects
                          , firstOutline :: [Bool] -- ^ Used to improve the outline API
                          }
-                         
+
 -- | A PDF Page object
 #ifndef __HADDOCK__
-data PDFPage = PDFPage 
+data PDFPage = PDFPage
           !(Maybe (PDFReference PDFPages)) --  Reference to parent
           !(PDFRect) -- Media box
           !(PDFReference PDFStream) -- Reference to content
@@ -391,27 +391,27 @@ data PDFPage
 
 instance Show PDFPage where
     show _ = "PDFPage"
-    
+
 -- | List of all pages
 newtype Pages = Pages (PDFTree PDFPage)
 
 -- | PDF Pages
 #ifndef __HADDOCK__
-data PDFPages = PDFPages 
+data PDFPages = PDFPages
               !Int
-              !(Maybe (PDFReference PDFPages)) -- Reference to parent 
+              !(Maybe (PDFReference PDFPages)) -- Reference to parent
               [Either (PDFReference PDFPages) (PDFReference PDFPage)]
 #else
 data PDFPages
 #endif
 
 -- | A PDF Transition
-data PDFTransition = PDFTransition !PDFFloat !PDFTransStyle  
+data PDFTransition = PDFTransition !PDFFloat !PDFTransStyle
   deriving(Eq)
 
 
 -- | Dimension of a transition
-data PDFTransDimension = Horizontal | Vertical 
+data PDFTransDimension = Horizontal | Vertical
  deriving(Eq)
 
 
@@ -446,10 +446,10 @@ instance MonadState PdfState PDF
 
 -- | Transition style
 data PDFTransStyle = Split PDFTransDimension PDFTransDirection
-                   | Blinds PDFTransDimension 
+                   | Blinds PDFTransDimension
                    | Box  PDFTransDirection
                    | Wipe PDFTransDirection2
-                   | Dissolve 
+                   | Dissolve
                    | Glitter PDFTransDirection2
                    deriving(Eq)
 
@@ -504,7 +504,7 @@ data OutlineStyle = NormalOutline
                   | BoldOutline
                   deriving(Eq)
 
-data PDFOutlineEntry = PDFOutlineEntry !PDFString 
+data PDFOutlineEntry = PDFOutlineEntry !PDFString
                               !(PDFReference PDFOutlineEntry) -- Parent
                               !(Maybe (PDFReference PDFOutlineEntry)) -- Prev
                               !(Maybe (PDFReference PDFOutlineEntry)) -- Next
@@ -513,7 +513,7 @@ data PDFOutlineEntry = PDFOutlineEntry !PDFString
                               Int -- Count of descendent (negative)
                               Destination
                               Color --
-                              OutlineStyle 
+                              OutlineStyle
 
 data Destination = Destination !(PDFReference PDFPage) deriving(Eq,Show)
 
@@ -524,16 +524,16 @@ type Outline = OutlineLoc OutlineData
 data Tree a = Node a [Tree a]
 
 data OutlineCtx a = Top | Child { value :: a
-                                , parent :: OutlineCtx a 
+                                , parent :: OutlineCtx a
                                 , lefts :: [Tree a]
                                 , rights :: [Tree a]
                                 }
-                                
+
 
 data OutlineLoc  a = OutlineLoc (Tree a) (OutlineCtx a)
 
 instance PdfObject PDFViewerPreferences where
-  toPDF (PDFViewerPreferences ht hm hwui fw cw ddt nfspm ) = toPDF $ PDFDictionary. M.fromList $ 
+  toPDF (PDFViewerPreferences ht hm hwui fw cw ddt nfspm ) = toPDF $ PDFDictionary. M.fromList $
    [ (PDFName "HideToolbar",AnyPdfObject ht)
    , (PDFName "HideMenubar",AnyPdfObject hm)
    , (PDFName "HideWindowUI",AnyPdfObject hwui)
@@ -553,7 +553,7 @@ instance Show PDFTransStyle where
    show (Glitter _) = "Glitter"
 
 instance PdfObject PDFTransition where
- toPDF (PDFTransition d t) = toPDF $ PDFDictionary. M.fromList $ 
+ toPDF (PDFTransition d t) = toPDF $ PDFDictionary. M.fromList $
    [ (PDFName "Type",AnyPdfObject (PDFName "Trans"))
    , (PDFName "S",AnyPdfObject (PDFName (show t)))
    , (PDFName "D",AnyPdfObject d)
@@ -564,37 +564,37 @@ instance PdfObject PDFTransition where
     optionalDm _ = []
     optionalM (Split _ a) = [ (PDFName "M",AnyPdfObject (PDFName (show a)))]
     optionalM (Box a) = [ (PDFName "M",AnyPdfObject (PDFName (show a)))]
-    optionalM _ = []    
+    optionalM _ = []
     optionalDi (Wipe a) = [ (PDFName "Di",AnyPdfObject (floatDirection a))]
     optionalDi (Glitter a)  = [ (PDFName "Di",AnyPdfObject (floatDirection a))]
-    optionalDi _ = []  
+    optionalDi _ = []
 
 -- PDF Pages
 
 instance PdfObject PDFPages where
- toPDF (PDFPages c Nothing l) = toPDF $ PDFDictionary. M.fromList $ 
+ toPDF (PDFPages c Nothing l) = toPDF $ PDFDictionary. M.fromList $
   [ (PDFName "Type",AnyPdfObject (PDFName "Pages"))
   , (PDFName "Kids",AnyPdfObject $ map AnyPdfObject l)
   , (PDFName "Count",AnyPdfObject . PDFInteger $ c)
-  ] 
- toPDF (PDFPages c (Just theParent) l) = toPDF $ PDFDictionary. M.fromList $ 
+  ]
+ toPDF (PDFPages c (Just theParent) l) = toPDF $ PDFDictionary. M.fromList $
   [ (PDFName "Type",AnyPdfObject (PDFName "Pages"))
   , (PDFName "Parent",AnyPdfObject theParent)
   , (PDFName "Kids",AnyPdfObject $ map AnyPdfObject l)
   , (PDFName "Count",AnyPdfObject . PDFInteger $ c)
-  ] 
+  ]
 
 
 instance PdfObject PDFPage where
- toPDF (PDFPage (Just theParent) box content theRsrc d t theAnnots) = toPDF $ PDFDictionary. M.fromList $ 
+ toPDF (PDFPage (Just theParent) box content theRsrc d t theAnnots) = toPDF $ PDFDictionary. M.fromList $
   [ (PDFName "Type",AnyPdfObject (PDFName "Page"))
   , (PDFName "Parent",AnyPdfObject theParent)
   , (PDFName "MediaBox",AnyPdfObject box)
   , (PDFName "Contents",AnyPdfObject content)
-  , if isJust theRsrc 
+  , if isJust theRsrc
       then
-       (PDFName "Resources",AnyPdfObject . fromJust $ theRsrc) 
-      else 
+       (PDFName "Resources",AnyPdfObject . fromJust $ theRsrc)
+      else
        (PDFName "Resources",AnyPdfObject emptyDictionary)
   ] ++ (maybe [] (\x -> [(PDFName "Dur",AnyPdfObject x)]) d)
   ++ (maybe [] (\x -> [(PDFName "Trans",AnyPdfObject x)]) t)
@@ -605,7 +605,7 @@ instance PdfObject PDFPage where
 -- Main objects in a PDF document
 
 instance PdfObject PDFCatalog where
- toPDF (PDFCatalog outlines lPages pgMode pgLayout viewerPrefs) = toPDF $ PDFDictionary . M.fromList $ 
+ toPDF (PDFCatalog outlines lPages pgMode pgLayout viewerPrefs) = toPDF $ PDFDictionary . M.fromList $
    [ (PDFName "Type",AnyPdfObject (PDFName "Catalog"))
    , (PDFName "Pages",AnyPdfObject lPages)
    , (PDFName "PageMode", AnyPdfObject . PDFName . show $ pgMode)
@@ -620,7 +620,7 @@ instance PdfObject OutlineStyle where
    toPDF BoldOutline = toPDF (PDFInteger 2)
 
 instance PdfObject PDFOutlineEntry where
- toPDF (PDFOutlineEntry title theParent prev next first theLast count dest color style) = 
+ toPDF (PDFOutlineEntry title theParent prev next first theLast count dest color style) =
      toPDF $ PDFDictionary. M.fromList $ [
         (PDFName "Title",AnyPdfObject title)
         , (PDFName "Parent",AnyPdfObject theParent)
@@ -646,9 +646,9 @@ instance PdfObject Destination where
   toPDF (Destination r) = toPDF                [ AnyPdfObject r
                                                , AnyPdfObject . PDFName $ "Fit"
                                                ]
-                                               
+
 instance PdfObject Color where
-   toPDF (Rgb r g b) = toPDF . map AnyPdfObject $ [r,g,b]  
+   toPDF (Rgb r g b) = toPDF . map AnyPdfObject $ [r,g,b]
    toPDF (Hsv h s v) = let (r,g,b) = hsvToRgb (h,s,v)
     in toPDF . map AnyPdfObject $ [r,g,b]
 
@@ -656,7 +656,7 @@ instance PdfObject Color where
 floatDirection :: PDFTransDirection2 -> PDFFloat
 floatDirection LeftToRight = 0
 floatDirection BottomToTop = 90
-floatDirection RightToLeft = 180 
+floatDirection RightToLeft = 180
 floatDirection TopToBottom = 270
 floatDirection TopLeftToBottomRight = 315
 
@@ -677,13 +677,13 @@ hsvToRgb (h,s,v) =
       5 -> (v,p,q)
       _ -> error "Hue value incorrect"
 
-getRgbColor :: Color -> (PDFFloat,PDFFloat,PDFFloat) 
-getRgbColor (Rgb r g b) = (r, g, b)  
-getRgbColor (Hsv h s v) = let (r,g,b) = hsvToRgb (h,s,v) in (r, g, b)  
+getRgbColor :: Color -> (PDFFloat,PDFFloat,PDFFloat)
+getRgbColor (Rgb r g b) = (r, g, b)
+getRgbColor (Hsv h s v) = let (r,g,b) = hsvToRgb (h,s,v) in (r, g, b)
 
 -- | Interpolation function
 interpole :: Int -> PDFFloat -> PDFFloat -> AnyPdfObject
-interpole n x y = AnyPdfObject . PDFDictionary . M.fromList $ 
+interpole n x y = AnyPdfObject . PDFDictionary . M.fromList $
                             [ (PDFName "FunctionType", AnyPdfObject . PDFInteger $ 2)
                             , (PDFName "Domain", AnyPdfObject . map AnyPdfObject $ ([0,1] :: [PDFFloat]))
                             , (PDFName "C0", AnyPdfObject . map AnyPdfObject $ [x])
@@ -691,7 +691,7 @@ interpole n x y = AnyPdfObject . PDFDictionary . M.fromList $
                             , (PDFName "N", AnyPdfObject . PDFInteger $  n)
                             ]
 
--- | A shading                             
+-- | A shading
 data PDFShading = AxialShading PDFFloat PDFFloat PDFFloat PDFFloat Color Color
                 | RadialShading PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat Color Color
                 deriving(Eq,Ord)

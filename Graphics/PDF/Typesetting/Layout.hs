@@ -102,19 +102,17 @@ instance Box (VBox ps s) where
    boxDescent (VGlue _ _ _ _ _) = 0
 
 instance (ParagraphStyle ps s) => DisplayableBox (VBox ps s) where
-        strokeBox (Paragraph _ _ _ _) _ _ = return ()
-        strokeBox b@(VBox _ _ _ l _) x y'' = strokeVBoxes l x y'
-          where
-              y' = y'' - boxHeight b
-        strokeBox (VGlue h w delta _ (Just style)) x y = 
+        strokeBox (Paragraph _ _ _ _) _ = return ()
+        strokeBox b@(VBox _ _ _ l _) xy = strokeVBoxes l (xy - (0 :+ boxHeight b))
+        strokeBox (VGlue h w delta _ (Just style)) xy = 
             if (isJust . interline $ style)
                 then
-                    (fromJust . interline $ style) $ Rectangle ((x+delta) :+ (y-h)) ((x+w+delta) :+ y)
+                    (fromJust . interline $ style) $ Rectangle (xy + (delta :+ (-h))) (xy + ((w+delta) :+ 0))
                 else
                    return()
-        strokeBox (VGlue _ _ _ _ _) _ _ = return ()
+        strokeBox (VGlue _ _ _ _ _) __ = return ()
 
-        strokeBox (SomeVBox delta _ a _) x y = strokeBox a (x+delta) y
+        strokeBox (SomeVBox delta _ a _) (x :+ y) = strokeBox a ((x+delta) :+ y)
                 
 type Width = PDFFloat
 type Height = PDFFloat
@@ -299,45 +297,44 @@ isSameParaStyle s (VGlue _ _ _ _ (Just s')) =  s `isSameStyleAs`  s'
 isSameParaStyle s (SomeVBox _ _ _ (Just s'))  =  s `isSameStyleAs`  s'     
 isSameParaStyle _ _ = False
 
-recurseStrokeVBoxes :: (ParagraphStyle ps s) => Int -> [VBox ps s] -> PDFFloat -> PDFFloat -> Draw ()
-recurseStrokeVBoxes _ [] _ _  = return ()
-recurseStrokeVBoxes _ (Paragraph _ _ _ _:_) _ _ = return ()
-recurseStrokeVBoxes nb (a@(VGlue _ _ _ _ _):l) xa y  = do
+recurseStrokeVBoxes :: (ParagraphStyle ps s) => Int -> [VBox ps s] -> Point -> Draw ()
+recurseStrokeVBoxes _ [] _  = return ()
+recurseStrokeVBoxes _ (Paragraph _ _ _ _:_) _ = return ()
+recurseStrokeVBoxes nb (a@(VGlue _ _ _ _ _):l) (xa :+ y)  = do
     let h = boxHeight a
-    strokeBox a xa y
-    recurseStrokeVBoxes nb l xa (y-h)
+    strokeBox a (xa :+ y)
+    recurseStrokeVBoxes nb l (xa :+ (y-h))
 
-recurseStrokeVBoxes nb (a:l) xa y = do
+recurseStrokeVBoxes nb (a:l) (xa :+ y) = do
     let h = boxHeight a
-    strokeBox a xa y
-    recurseStrokeVBoxes (nb+1) l xa (y-h)
+    strokeBox a (xa :+ y)
+    recurseStrokeVBoxes (nb+1) l (xa :+ (y-h))
 
-drawWithParaStyle :: (ParagraphStyle ps s) => ps -> [VBox ps s] -> PDFFloat -> PDFFloat -> Draw ()   
-drawWithParaStyle style b xa y' = do
+drawWithParaStyle :: (ParagraphStyle ps s) => ps -> [VBox ps s] -> Point -> Draw ()   
+drawWithParaStyle style b (xa :+ y') = do
     let  (l',l'') = span (isSameParaStyle style) b
          h' = foldl' (\x' ny -> x' + boxHeight ny) 0.0 l'
     if (isJust . paragraphStyle $ style)
       then do
           let xleft = (minimum $ 100000:map getBoxDelta l' ) + xa
               xright = (maximum $ 0:(map (\x -> boxWidth x + getBoxDelta x) l')) + xa
-          (fromJust . paragraphStyle $ style) (Rectangle (xleft :+ (y'- h')) (xright :+ y')) (recurseStrokeVBoxes 1 l' xa y')
+          (fromJust . paragraphStyle $ style) (Rectangle (xleft :+ (y'- h')) (xright :+ y')) (recurseStrokeVBoxes 1 l' (xa :+ y'))
       else
-         recurseStrokeVBoxes 1 l' xa y'
-    strokeVBoxes l'' xa (y' - h')
+         recurseStrokeVBoxes 1 l' (xa :+ y')
+    strokeVBoxes l'' (xa :+ (y' - h'))
 
 -- | Stroke the VBoxes
 strokeVBoxes :: (ParagraphStyle ps s) => [VBox ps s] -- ^ List of boxes
-             -> PDFFloat -- ^ X pos
-             -> PDFFloat -- ^ Y pos
+             -> Point -- ^ position
              -> Draw ()
-strokeVBoxes [] _ _ = return ()
-strokeVBoxes b@((Paragraph _ _ (Just s') _):_) xa y = drawWithParaStyle s' b xa y 
-strokeVBoxes b@((VBox _ _ _ _ (Just s')):_) xa y = drawWithParaStyle s' b xa y 
-strokeVBoxes b@((VGlue _ _ _ _ (Just s')):_) xa y = drawWithParaStyle s' b xa y
-strokeVBoxes b@((SomeVBox _ _ _ (Just s')):_) xa y = drawWithParaStyle s' b xa y
-strokeVBoxes (a:l) xa y = 
+strokeVBoxes [] _ = return ()
+strokeVBoxes b@((Paragraph _ _ (Just s') _):_) xy = drawWithParaStyle s' b xy 
+strokeVBoxes b@((VBox _ _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy 
+strokeVBoxes b@((VGlue _ _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy
+strokeVBoxes b@((SomeVBox _ _ _ (Just s')):_) xy = drawWithParaStyle s' b xy
+strokeVBoxes (a:l) (xa :+ y) = 
     do
         let h = boxHeight a
-        strokeBox a xa y
-        strokeVBoxes l xa (y-h)
+        strokeBox a (xa :+ y)
+        strokeVBoxes l (xa :+ (y-h))
         
