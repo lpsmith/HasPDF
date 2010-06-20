@@ -59,8 +59,8 @@ shadingTest  = do
 
 patternTest :: PDFReference PDFPage -> PDF ()
 patternTest page = do
-     p <- createUncoloredTiling 0 0 100 50 100 50 ConstantSpacing pattern
-     cp <- createColoredTiling 0 0 100 50 100 50 ConstantSpacing cpattern
+     p <- createUncoloredTiling 0 (100 :+ 50) (100 :+ 50) ConstantSpacing pattern
+     cp <- createColoredTiling 0 (100 :+ 50) (100 :+ 50) ConstantSpacing cpattern
      drawWithPage page $ do
          strokeColor green
          setUncoloredFillPattern p (Rgb 1 0 0)
