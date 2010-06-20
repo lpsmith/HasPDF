@@ -111,10 +111,10 @@ testAnnotation p = do
         r
  where r = do
         strokeColor red
-        newAnnotation (URLLink (toPDFString "Go to my blog") [0,0,200,100] "http://www.alpheccar.org" True)
+        newAnnotation (URLLink (toPDFString "Go to my blog") (Rectangle (0 :+ 0) (200 :+ 100)) "http://www.alpheccar.org" True)
         drawText $ text (PDFFont Times_Roman 12) (10 :+ 30) (toPDFString "Go to my blog")
         stroke $ Rectangle 0 (200 :+ 100)
-        newAnnotation (TextAnnotation (toPDFString "Key annotation") [100,100,130,130] Key)
+        newAnnotation (TextAnnotation (toPDFString "Key annotation") (Rectangle (100 :+ 100) (130 :+ 130)) Key)
 
 textTest :: Draw ()
 textTest = do
