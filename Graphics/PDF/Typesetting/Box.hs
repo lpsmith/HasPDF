@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2006
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -22,7 +22,7 @@ module Graphics.PDF.Typesetting.Box (
   , ComparableStyle(..)
   , mkDrawBox
  ) where
-     
+
 import Graphics.PDF.LowLevel.Types
 import Graphics.PDF.Draw
 import Graphics.PDF.Text
@@ -40,13 +40,13 @@ instance Box DrawBox where
     boxWidth _ = 0
     boxHeight _ = 0
     boxDescent _ = 0
-    
+
 instance DisplayableBox DrawBox where
     strokeBox (DrawBox a) xy = do
         withNewContext $ do
             applyMatrix $ translate xy
             a
-    
+
 instance Show DrawBox where
     show _ = "DrawBox"
 
@@ -64,18 +64,18 @@ data TextStyle = TextStyle { textFont :: !PDFFont
                            , scaleCompression :: !PDFFloat -- ^ Scale the compression factor of glues
                            }
                            deriving(Eq)
-             
+
 -- | What kind of style drawing function is required for a word
--- when word styling is enabled              
+-- when word styling is enabled
 data StyleFunction = DrawWord -- ^ Must style a word
                    | DrawGlue -- ^ Must style a glue
-                   deriving(Eq)  
-                   
+                   deriving(Eq)
+
 -- | Used to compare two style without taking into account the style state
-class ComparableStyle a where   
-    isSameStyleAs :: a -> a -> Bool                     
-                  
--- | Style of text  (sentences and words). Minimum definition textStyle      
+class ComparableStyle a where
+    isSameStyleAs :: a -> a -> Bool
+
+-- | Style of text  (sentences and words). Minimum definition textStyle
 class ComparableStyle a => Style a where
     -- ^ Modify the look of a sentence (sequence of words using the same style on a line)
     sentenceStyle :: a -- ^ The style
@@ -89,29 +89,29 @@ class ComparableStyle a => Style a where
     -- | A style may contain data changed from word to word
     updateStyle :: a -> a
     updateStyle = id
-    
+
     -- | A style may change the height of words
-    -- 
+    --
     -- > Default implementation
     -- > styleHeight = getHeight . textFont . textStyle
-    -- 
+    --
     styleHeight :: a -> PDFFloat
-    
+
     -- | A style may change the descent of lines
     --
     -- > Default implementation
     -- > styleDescent = getDescent . textFont . textStyle
     --
     styleDescent :: a -> PDFFloat
-    styleHeight = getHeight . textFont . textStyle 
-    styleDescent = getDescent . textFont . textStyle 
+    styleHeight = getHeight . textFont . textStyle
+    styleDescent = getDescent . textFont . textStyle
 
 -- | A box is an object with dimensions and used in the typesetting process
 class Box a where
      -- | Box width
      boxWidth :: a -- ^ Box
               -> PDFFloat -- ^ Width of the box
-              
+
      -- | Box height
      boxHeight :: a -> PDFFloat
      -- | Distance between box bottom and box baseline
@@ -119,7 +119,7 @@ class Box a where
      -- | Distance between box top and box baseline
      boxAscent :: a -> PDFFloat
      boxAscent a = boxHeight a - boxDescent a
-     
+
 instance Box BoxDimension where
     boxWidth (w,_,_) = w
     boxHeight (_,h,_) = h
@@ -131,7 +131,7 @@ class DisplayableBox a where
      strokeBox :: a      -- ^ The box
                -> Point  -- ^ position,  vertical to top of the box and NOT baseline
                -> Draw ()
-    
+
 instance Box AnyBox where
     boxWidth (AnyBox a)  = boxWidth a
     boxHeight (AnyBox a) = boxHeight a
@@ -139,8 +139,8 @@ instance Box AnyBox where
 
 instance DisplayableBox AnyBox where
     strokeBox (AnyBox a)  = strokeBox a
-  
+
 instance Show AnyBox where
     show (AnyBox a)  = show a
-    
+
 data AnyBox = forall a. (Show a,Box a, DisplayableBox a) => AnyBox a

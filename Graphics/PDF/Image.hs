@@ -222,7 +222,7 @@ parseJpegContent h = do
                io $ hSeek h RelativeSeek (fromIntegral (l-2))
                parseJpegContent h
 
-analyzeJpeg :: Handle -> FA (Int,PDFFloat,PDFFloat,Int)
+analyzeJpeg :: Handle -> FA (Int,Point,Int)
 analyzeJpeg h = do
     -- Get Length
     io $ hSeek h SeekFromEnd 0
@@ -246,7 +246,7 @@ analyzeJpeg h = do
     --io $ print color_space
     --io $ hClose h
     unless (color_space `elem` [1,3,4]) $ throwError (strMsg "Color space not supported")
-    return (bits_per_component,(fromIntegral height),(fromIntegral width),color_space)
+    return (bits_per_component,fromIntegral width :+ fromIntegral height,color_space)
     
 --test = analyzePng "Test/logo.png"
     
@@ -261,24 +261,24 @@ readJpegFile f = catchJust ioErrors (do
      r <- liftIO $ withFile f $ \h -> do
              runFA (analyzeJpeg h)
      case r of
-         Right (bits_per_component,height,width,color_space) -> do
+         Right (bits_per_component,size,color_space) -> do
                  img <- liftIO $ withFile f $ \h' -> do
                      nb <- hFileSize h'
                      B.hGet h' (fromIntegral nb)
-                 return (Right $ JpegFile bits_per_component width height color_space (fromLazyByteString img))
+                 return (Right $ JpegFile bits_per_component size color_space (fromLazyByteString img))
          Left s -> return $ Left s) (\err -> return $ Left (show err)) 
 
 -- | Get the JPEG bounds
-jpegBounds :: JpegFile -> (PDFFloat,PDFFloat)
-jpegBounds (JpegFile _ w h _ _) = (w,h)
+jpegBounds :: JpegFile -> Point 
+jpegBounds (JpegFile _ wh _ _) = wh
 
 -- | Use an abstract description of a Jpeg to return a PDFReference that can be used to manipulate the Jpeg in the context
 -- of the PDF document
 createPDFJpeg :: JpegFile  
               -> PDF (PDFReference PDFJpeg)
-createPDFJpeg (JpegFile bits_per_component width height color_space img) = do
+createPDFJpeg (JpegFile bits_per_component (width :+ height) color_space img) = do
         PDFReference s <- createContent a' Nothing  
-        recordBound s width height
+        recordBound s (width :+ height)
         return (PDFReference s) 
     where
        color c = case c of
@@ -302,13 +302,13 @@ createPDFJpeg (JpegFile bits_per_component width height color_space img) = do
                     tell img        
               
 -- | A Jpeg file   
-data JpegFile = JpegFile !Int !PDFFloat !PDFFloat !Int !Builder
+data JpegFile = JpegFile !Int !Point !Int !Builder
      
 -- | A Jpeg PDF object
 data PDFJpeg
 instance PDFXObject PDFJpeg where
     drawXObject a = withNewContext $ do
-            (width,height) <- bounds a
+            (width :+ height) <- bounds a
             applyMatrix (scale (width :+ height))
             privateDrawXObject a
         

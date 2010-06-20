@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpheccar 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -13,7 +13,7 @@ module Graphics.PDF
   (
   -- * HPDF
   -- ** PDF Monad
-    PDF 
+    PDF
   , runPdf
   -- ** PDF Common Types
   , PDFRect(..)
@@ -49,7 +49,7 @@ module Graphics.PDF
   , module Graphics.PDF.Typesetting
   , module Graphics.PDF.Hyphenate
   ) where
- 
+
 import Graphics.PDF.Hyphenate
 import Graphics.PDF.Typesetting
 import Graphics.PDF.Shading
@@ -60,7 +60,7 @@ import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import qualified Data.ByteString.Lazy as B
 import Data.Int
-import System.IO
+-- import System.IO
 import Text.Printf(printf)
 import Control.Monad.State
 import Graphics.PDF.Annotation
@@ -88,7 +88,7 @@ createPDF  = do
   -- Create an empty resource
   --addObject $ PDFResource proc
   return ()
-  
+
 -- Create the PDF stream objects from the draw monads
 createStreams :: PDF ()
 createStreams = do
@@ -104,7 +104,7 @@ createStreams = do
      --cp <- gets currentPage
      --let (_,state',w') = runDrawing d (emptyEnvironment {streamId = r, xobjectb = myBounds, currentp = maybe Nothing (\(PDFReference x) -> Just x) cp })
      let ref = PDFReference r :: PDFReference PDFLength
-         
+
      -- Pattern NEEDS a resource entry even if empty otherwise don't work with acrobat reader
      -- Image DON'T want a resource entry if empty otherwise don't work with apple reader
      resources <- if (emptyResource (rsrc state')) && (not (pdfDictMember (PDFName "PatternType") (otherRsrcs state')))
@@ -112,7 +112,7 @@ createStreams = do
          case p of
             -- Not linked to a page
             -- otherResource are entries specific to a special stream (like an XObject) so we return empty for a page
-            Nothing -> return (otherRsrcs state') 
+            Nothing -> return (otherRsrcs state')
             -- Linked to a page
             Just pageRef -> do
                  setPageAnnotations (annots state') pageRef
@@ -122,14 +122,14 @@ createStreams = do
          rsrcRef <- addObject (rsrc state')
          case p of
              -- Not linked to a page
-             Nothing -> do                  
+             Nothing -> do
                   return $ (otherRsrcs state') `pdfDictUnion` (PDFDictionary . M.fromList  $ [(PDFName "Resources",AnyPdfObject rsrcRef)])
              -- Linked to a page
              Just pageRef -> do
                   setPageAnnotations (annots state') pageRef
                   setPageResource rsrcRef pageRef
                   return emptyDictionary
-              
+
      infos <- gets docInfo
      -- Resources to add to the stream
      -- We compress only if the stream is not using its own filter
@@ -161,16 +161,16 @@ saveObjects  = do
 
 -- | The PDFTrailer
 #ifndef __HADDOCK__
-data PDFTrailer = PDFTrailer 
+data PDFTrailer = PDFTrailer
   !Int -- Number of PDF objects in the document
   !(PDFReference PDFCatalog) -- Reference to the PDf catalog
   !(PDFDocumentInfo)
 #else
 data PDFTrailer
 #endif
-    
+
 instance PdfObject PDFTrailer where
-   toPDF (PDFTrailer size root infos) = toPDF $ PDFDictionary. M.fromList $ 
+   toPDF (PDFTrailer size root infos) = toPDF $ PDFDictionary. M.fromList $
      [ (PDFName "Size",AnyPdfObject . PDFInteger $ size)
      , (PDFName "Root",AnyPdfObject root)
      , (PDFName "Info",AnyPdfObject . PDFDictionary . M.fromList $ allInfos)
@@ -184,24 +184,24 @@ instance PdfObject PDFTrailer where
 -- | Write PDF objects in the TOC
 writeObjectsAndCreateToc :: [Builder] -- ^ List of objects each object being already converted to a bytestring
                           -> (Int,Int64,[Builder])
-writeObjectsAndCreateToc l = 
+writeObjectsAndCreateToc l =
    let lengths =  tail . scanl (\len obj -> len + (B.length . toLazyByteString $ obj)) 0 $ l
        createEntry x = serialize $ (printf "%010d 00000 n \n" ((fromIntegral x)::Integer) :: String)
-       entries = map createEntry (init lengths) 
+       entries = map createEntry (init lengths)
    in
    (length l,last lengths,entries)
 -- foldr writeObject (0,0::Int64,[]) l where
 -- writeObject obj (nb,len,toc) = (nb+1,len + (B.length . toLazyByteString $ obj),(serialize $ (printf "%010d 00000 n \n" ((fromIntegral len)::Integer))) : toc)
-     
+
 defaultPdfSettings :: PdfState
-defaultPdfSettings = 
+defaultPdfSettings =
   PdfState {
              supplySrc = 1
            , objects = IM.empty
            , pages = noPages
            , streams = IM.empty
            , catalog = PDFReference 0
-           , defaultRect = PDFRect 0 0 600 400 
+           , defaultRect = PDFRect 0 0 600 400
            , docInfo = standardDocInfo { author=toPDFString "Unknown", compressed = True}
            , outline = Nothing
            , currentPage = Nothing
@@ -209,7 +209,7 @@ defaultPdfSettings =
            , firstOutline = [True]
            }
 
-createObjectByteStrings :: PdfState -> PDF a -> Builder 
+createObjectByteStrings :: PdfState -> PDF a -> Builder
 createObjectByteStrings pdfState m =
       let header = serialize "%PDF-1.5\n"
           objectEncoding (x,a) = toPDF . PDFReferencedObject (fromIntegral x) $ a
@@ -232,12 +232,12 @@ createObjectByteStrings pdfState m =
                 , serialize (show len)
                 , serialize "\n%%EOF"
                 ]
-      
+
 -- | Generates a PDF document
 runPdf :: String -- ^ Name of the PDF document
        -> PDFDocumentInfo
        -> PDFRect -- ^ Default size for a page
-       -> PDF a  -- ^ PDF action 
+       -> PDF a  -- ^ PDF action
        -> IO ()
 runPdf filename infos rect m = do
   let content = createObjectByteStrings (defaultPdfSettings {defaultRect = rect, docInfo = infos} ) m

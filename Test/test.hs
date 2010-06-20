@@ -595,7 +595,7 @@ testAll jpg = do
 
       page6 <- addPage Nothing
       newSection (toPDFString "Object reuse") Nothing Nothing $ do
-           r <- createPDFXForm 0 0 200 200 lineStyle
+           r <- createPDFXForm 0 (200 :+ 200) lineStyle
            drawWithPage page6 $ do
                 drawXObject r
 

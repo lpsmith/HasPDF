@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -55,7 +55,7 @@ import Graphics.PDF.Coordinates
 import Graphics.PDF.Draw
 import Control.Monad.Writer
 import Graphics.PDF.LowLevel.Serializer
-import Data.Monoid
+-- import Data.Monoid
 
 class Shape a where
     addShape :: a -> Draw ()
@@ -79,7 +79,7 @@ class Shape a where
     fillAndStrokeEO r = do
         addShape r
         fillAndStrokePathEO
-    
+
 data Line = Line !Point !Point deriving(Eq)
 instance Shape Line where
     addShape (Line a b)= do
@@ -89,16 +89,16 @@ instance Shape Line where
     fillAndStroke _ = error "Can't fill a line !"
     fillEO _ = error "Can't fill a line !"
     fillAndStrokeEO _ = error "Can't fill a line !"
-    
-data Rectangle = Rectangle !Point !Point deriving (Eq) 
+
+data Rectangle = Rectangle !Point !Point deriving (Eq)
 instance Shape Rectangle where
- addShape (Rectangle a b) 
+ addShape (Rectangle a b)
      = tell . mconcat $ [ serialize '\n'
                         , toPDF a
                         , serialize ' '
                         , toPDF (b - a)
                         , serialize " re" ]
- 
+
 data Arc = Arc !Point !Point deriving(Eq)
 instance Shape Arc where
     addShape (Arc (x0 :+ y0) (x1 :+ y1)) = do
@@ -107,7 +107,7 @@ instance Shape Arc where
             kappa = 0.5522847498
         beginPath (x0 :+ y0)
         curveto ((x0+width*kappa) :+ y0) (x1 :+ (y1-height*kappa)) (x1 :+ y1)
-               
+
 data Ellipse = Ellipse !Point !Point deriving(Eq)
 instance Shape Ellipse where
     addShape (Ellipse (x0 :+ y0) (x1 :+ y1)) = do
@@ -140,11 +140,11 @@ instance Shape RoundRectangle where
         addLineToPath (x0 :+ (y0+rh))
         addBezierCubic (x0 :+ (y0+rh - h)) ((x0+rw - w) :+ y0) ((x0+rw) :+ y0)
         addLineToPath ((x1-rw) :+ y0)
-        
+
 data Circle = Circle !Point !Scalar deriving(Eq)
 instance Shape Circle where
     addShape (Circle c r) = let r' = r :+ r in addShape (Ellipse (c - r') (c + r'))
-                
+
 newtype Polygon = Polygon [Point]
 instance Shape Polygon where
     addShape (Polygon l) = addPolygonToPath l
@@ -152,40 +152,40 @@ instance Shape Polygon where
 
 -- | Set pen width
 setWidth :: MonadPath m => PDFFloat -> m ()
-setWidth w = tell . mconcat $[ serialize "\n" 
-                             , toPDF w
-                             , serialize " w"
-                             ]
+setWidth w = tell . mconcat $ [ serialize "\n"
+                              , toPDF w
+                              , serialize " w"
+                              ]
 
 -- | Set pen width
 setMiterLimit :: MonadPath m => PDFFloat -> m ()
-setMiterLimit w = tell . mconcat $[ serialize "\n" 
-                                  , toPDF w
-                                  , serialize " M"
-                                  ]
+setMiterLimit w = tell . mconcat $ [ serialize "\n"
+                                   , toPDF w
+                                   , serialize " M"
+                                   ]
 
 -- | Line cap styles
 data CapStyle = ButtCap
               | RoundCap
               | SquareCap
               deriving(Eq,Enum)
-              
+
 -- | Line join styles
 data JoinStyle = MiterJoin
                | RoundJoin
                | BevelJoin
                deriving(Eq,Enum)
-                            
+
 -- | Set line cap
 setLineCap :: MonadPath m => CapStyle -> m ()
-setLineCap w = tell . mconcat $[ serialize "\n " 
+setLineCap w = tell . mconcat $[ serialize "\n "
                                , toPDF (fromEnum  w)
                                , serialize " J"
                                ]
 
 -- | Set line join
 setLineJoin :: MonadPath m => JoinStyle -> m ()
-setLineJoin w = tell . mconcat $[ serialize "\n " 
+setLineJoin w = tell . mconcat $[ serialize "\n "
                                 , toPDF (fromEnum  w)
                                 , serialize " j"
                                 ]
@@ -194,8 +194,8 @@ data DashPattern = DashPattern ![PDFFloat] PDFFloat deriving(Eq)
 
 -- | Set the dash pattern
 setDash :: MonadPath m => DashPattern -> m()
-setDash (DashPattern a p) = 
-    tell . mconcat$ [ serialize "\n " 
+setDash (DashPattern a p) =
+    tell . mconcat$ [ serialize "\n "
                     , toPDF a
                     , serialize ' '
                     , toPDF p
@@ -205,26 +205,26 @@ setDash (DashPattern a p) =
 -- | No dash pattern
 setNoDash :: MonadPath m => m ()
 setNoDash = setDash (DashPattern [] 0)
-    
+
 -- | Begin a new path at a position
-beginPath :: Point 
+beginPath :: Point
           -> Draw ()
 beginPath = moveto
 
--- | Close current path 
+-- | Close current path
 closePath :: Draw ()
 closePath = tell . serialize $ "\nh"
 
 
--- | Append a cubic Bezier curve to the current path. The curve extends 
--- from the current point to the point (x3 , y3), using (x1 , y1 ) and 
+-- | Append a cubic Bezier curve to the current path. The curve extends
+-- from the current point to the point (x3 , y3), using (x1 , y1 ) and
 -- (x2, y2) as the Bezier control points
 addBezierCubic :: Point
                -> Point
                -> Point
                -> Draw ()
 addBezierCubic b c d = do
-    tell . mconcat $ [ serialize "\n" 
+    tell . mconcat $ [ serialize "\n"
                      , toPDF b
                      , serialize ' '
                      , toPDF c
@@ -233,22 +233,22 @@ addBezierCubic b c d = do
                      , serialize " c"
                      ]
     writeDrawST penPosition d
-                    
+
 -- | Move pen to a given point without drawing anything
-moveto :: Point 
+moveto :: Point
        -> Draw ()
-moveto a = do 
-    tell . mconcat $ [ serialize "\n" 
+moveto a = do
+    tell . mconcat $ [ serialize "\n"
                      , toPDF a
                      , serialize " m"
                      ]
     writeDrawST penPosition a
 
 -- | Draw a line from current point to the one specified by lineto
-lineto :: Point 
-       -> Draw () 
+lineto :: Point
+       -> Draw ()
 lineto a = do
-    tell . mconcat $[ serialize "\n" 
+    tell . mconcat $[ serialize "\n"
                     , toPDF a
                     , serialize " l"
                     ]
@@ -277,7 +277,7 @@ arcto theta
                 b = a + delta'
             curveto b c d
 
-addLineToPath :: Point 
+addLineToPath :: Point
               -> Draw ()
 addLineToPath = lineto
 
@@ -287,32 +287,32 @@ addPolygonToPath :: [Point]
 addPolygonToPath []  = return ()
 addPolygonToPath (l : ls) =  do
     moveto l
-    mapM_ addLineToPath ls  
-    
+    mapM_ addLineToPath ls
+
 -- | Draw current path
-strokePath :: Draw ()             
+strokePath :: Draw ()
 strokePath = tell . serialize $ "\nS"
 
 -- | Fill current path
-fillPath :: Draw ()             
+fillPath :: Draw ()
 fillPath = tell . serialize $ "\nf"
 
 -- | Fill current path
-fillAndStrokePath :: Draw ()             
+fillAndStrokePath :: Draw ()
 fillAndStrokePath = tell . serialize $ "\nB"
 
 -- | Set clipping path
-setAsClipPathEO :: Draw ()             
+setAsClipPathEO :: Draw ()
 setAsClipPathEO = tell . serialize $ "\nW* n"
 
 -- | Set clipping path
-setAsClipPath :: Draw ()             
+setAsClipPath :: Draw ()
 setAsClipPath = tell . serialize $ "\nW n"
 
 -- | Fill current path using even odd rule
-fillPathEO :: Draw ()             
+fillPathEO :: Draw ()
 fillPathEO = tell . serialize $ "\nf*"
 
 -- | Fill current path using even odd rule
-fillAndStrokePathEO :: Draw ()             
+fillAndStrokePathEO :: Draw ()
 fillAndStrokePathEO = tell . serialize $ "\nB*"

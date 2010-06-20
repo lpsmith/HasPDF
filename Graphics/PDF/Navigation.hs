@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -18,11 +18,11 @@ module Graphics.PDF.Navigation(
   , newSection
   , newSectionWithPage
  ) where
-     
+
 import Graphics.PDF.Pages
 import Graphics.PDF.Draw
 import Graphics.PDF.LowLevel.Types
-import Graphics.PDF.Colors(Color(..))
+-- import Graphics.PDF.Colors(Color(..))
 import Control.Monad.State(gets)
 import Control.Monad(when)
 import Data.Maybe(isNothing)
@@ -30,8 +30,8 @@ import Data.Maybe(isNothing)
 -- | True if we are adding the first outline to this level
 isFirst :: [Bool] -> Bool
 isFirst r = head r
-  
--- | Start a new outline level  
+
+-- | Start a new outline level
 startNew :: PDF ()
 startNew = modifyStrict $ \s -> s{firstOutline = True:(firstOutline s)}
 
@@ -62,7 +62,7 @@ newSectionWithPage :: PDFString -- ^ Outline title
                    -> PDF ()
                    -> PDF ()
 newSectionWithPage myS col style page p = newSectionPrivate myS col style (Just page) p
-    
+
 newSectionPrivate :: PDFString -- ^ Outline title
                   -> Maybe Color -- ^ Outline color
                   -> Maybe OutlineStyle -- ^Outline style
@@ -77,7 +77,7 @@ newSectionPrivate myS col style page p = do
        r <- gets firstOutline
        if isFirst r
         then do
-            if length r > 1 
+            if length r > 1
              then do
                 newChild myS col style page
                 addedOutline
@@ -87,8 +87,8 @@ newSectionPrivate myS col style page p = do
                 newlevel
         else do
            newSibling myS col style page
-           newlevel                  
-                   
+           newlevel
+
 newSibling :: PDFString -- ^ Outline title
            -> Maybe Color -- ^ Outline color
            -> Maybe OutlineStyle -- ^Outline style
@@ -104,7 +104,7 @@ newSibling myS col style page = do
             case ot of
                 Nothing -> modifyStrict $ \s -> s {outline = Just $ insertDown myValue (OutlineLoc (Node myValue []) Top)}
                 Just r -> modifyStrict $ \s -> s {outline = Just $ insertRight myValue r}
-                
+
 newChild :: PDFString -- ^ Outline title
          -> Maybe Color -- ^ Outline color
          -> Maybe OutlineStyle -- ^Outline style
@@ -120,7 +120,7 @@ newChild myS col style page = do
             case ot of
                 Nothing -> modifyStrict $ \s -> s {outline = Just $ insertDown myValue (OutlineLoc (Node myValue []) Top)}
                 Just r -> modifyStrict $ \s -> s {outline = Just $ insertDown myValue r}
-                
+
 moveToParent :: PDF ()
 moveToParent = do
     ot <- gets outline

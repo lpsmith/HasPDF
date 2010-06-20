@@ -70,7 +70,7 @@ createTilingPattern :: Point    -- ^ Left, Bottom
                     -> TilingType
                     -> Draw a -- ^ Drawing commands
                     -> PDF Int
-createTilingPattern (xa :+ ya) (xb :+ yb) (hstep :+ vstep) pt tt d =
+createTilingPattern a@(xa :+ ya) b@(xb :+ yb) (hstep :+ vstep) pt tt d =
     let a' = do modifyStrict $ \s ->
                   s {otherRsrcs = PDFDictionary. M.fromList $
                        [ (PDFName "Type",AnyPdfObject . PDFName $ "Pattern")
@@ -86,7 +86,7 @@ createTilingPattern (xa :+ ya) (xb :+ yb) (hstep :+ vstep) pt tt d =
                 d
    in do
        PDFReference s <- createContent a' Nothing
-       recordBound s (xb-xa) (yb-ya)
+       recordBound s (b - a)
        return s
 
 

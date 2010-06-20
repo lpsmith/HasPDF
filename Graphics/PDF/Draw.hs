@@ -4,7 +4,7 @@
 -- Copyright   : (c) alpha 2006
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -140,7 +140,7 @@ data DrawState = DrawState {
                 }
 data DrawEnvironment = DrawEnvironment {
                         streamId :: Int
-                     ,  xobjectBoundD :: IM.IntMap (PDFFloat,PDFFloat)
+                     ,  xobjectBoundD :: IM.IntMap Point
                      }
 
 data DrawTuple s
@@ -154,7 +154,7 @@ emptyEnvironment :: DrawEnvironment
 emptyEnvironment = DrawEnvironment 0 IM.empty
 
 class PDFGlobals m where
-    bounds :: PDFXObject a => PDFReference a -> m (PDFFloat,PDFFloat)
+    bounds :: PDFXObject a => PDFReference a -> m Point
 
 -- | The drawing monad
 newtype Draw a = Draw {unDraw :: forall s. DrawTuple s -> ST s a }
@@ -335,17 +335,17 @@ instance PdfResourceObject (PDFReference AnyPdfXForm) where
 
 -- | Get the bounds for an xobject
 getBoundInDraw :: Int -- ^ Reference
-         -> Draw (PDFFloat,PDFFloat)
+               -> Draw Point
 getBoundInDraw ref = do
     theBounds <- asks xobjectBoundD
-    return $ IM.findWithDefault (0.0,0.0) ref theBounds
+    return $ IM.findWithDefault 0 ref theBounds
 
 -- | Get the bounds for an xobject
 getBoundInPDF :: Int -- ^ Reference
-              -> PDF (PDFFloat,PDFFloat)
+              -> PDF Point
 getBoundInPDF ref = do
     theBounds <- gets xobjectBound
-    return $ IM.findWithDefault (0.0,0.0) ref theBounds
+    return $ IM.findWithDefault 0 ref theBounds
 
 -----------
 --
@@ -371,7 +371,7 @@ data PdfState = PdfState { supplySrc :: !Int -- ^ Supply of unique identifiers
                          , docInfo :: !PDFDocumentInfo -- ^ Document infos
                          , outline :: Maybe Outline -- ^ Root outline
                          , currentPage :: Maybe (PDFReference PDFPage) -- ^ Reference to the current page used to create outlines
-                         , xobjectBound :: !(IM.IntMap (PDFFloat,PDFFloat)) -- ^ Width and height of xobjects
+                         , xobjectBound :: !(IM.IntMap Point) -- ^ Width and height of xobjects
                          , firstOutline :: [Bool] -- ^ Used to improve the outline API
                          }
 
@@ -697,6 +697,7 @@ data PDFShading = AxialShading !Point !Point !Color !Color
                 | RadialShading !Point !Radius !Point !Radius !Color !Color
                 deriving(Eq)
 
+lexOrd :: Ordering -> Ordering -> Ordering
 lexOrd EQ y = y
 lexOrd x  _ = x
 
@@ -705,23 +706,23 @@ infixr 5 `lexOrd`
 instance Ord PDFShading where
    compare (AxialShading (a0 :+ b0) (c0 :+ d0) e0 f0)
            (AxialShading (a1 :+ b1) (c1 :+ d1) e1 f1)
-         =        compare a0 a1 
-         `lexOrd` compare b0 b1 
-         `lexOrd` compare c0 c1 
-         `lexOrd` compare d0 d1 
-         `lexOrd` compare e0 e1 
+         =        compare a0 a1
+         `lexOrd` compare b0 b1
+         `lexOrd` compare c0 c1
+         `lexOrd` compare d0 d1
+         `lexOrd` compare e0 e1
          `lexOrd` compare f0 f1
-   compare (AxialShading _ _ _ _) (RadialShading _ _ _ _ _ _) = LT 
+   compare (AxialShading _ _ _ _) (RadialShading _ _ _ _ _ _) = LT
    compare (RadialShading _ _ _ _ _ _) (AxialShading _ _ _ _) = GT
    compare (RadialShading (a0 :+ b0) c0 (d0 :+ e0) f0 g0 h0)
            (RadialShading (a1 :+ b1) c1 (d1 :+ e1) f1 g1 h1)
-         =        compare a0 a1 
-         `lexOrd` compare b0 b1 
-         `lexOrd` compare c0 c1 
-         `lexOrd` compare d0 d1 
-         `lexOrd` compare e0 e1 
+         =        compare a0 a1
+         `lexOrd` compare b0 b1
+         `lexOrd` compare c0 c1
+         `lexOrd` compare d0 d1
+         `lexOrd` compare e0 e1
          `lexOrd` compare f0 f1
-         `lexOrd` compare g0 g1 
+         `lexOrd` compare g0 g1
          `lexOrd` compare h0 h1
 
 instance PdfResourceObject PDFShading where

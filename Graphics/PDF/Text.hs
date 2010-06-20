@@ -45,7 +45,7 @@ import Graphics.PDF.Draw
 import Control.Monad.State
 import Graphics.PDF.Resources
 import Control.Monad.Writer
-import Control.Monad.Trans
+-- import Control.Monad.Trans
 import qualified Data.Set as Set
 import Graphics.PDF.Coordinates
 import Data.Word
@@ -54,7 +54,7 @@ import qualified Data.Map as M(findWithDefault)
 import Data.List(foldl')
 import Data.Binary.Builder(Builder)
 import Graphics.PDF.LowLevel.Serializer
-import Data.Monoid
+-- import Data.Monoid
 import qualified Data.ByteString as S
 #if __GLASGOW_HASKELL__ >= 608
 import Data.ByteString.Internal(w2c,c2w)

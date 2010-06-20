@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -42,6 +42,7 @@ module Graphics.PDF.Document(
  , emptyDrawing
  ) where
 
+import Graphics.PDF.Coordinates
 import Graphics.PDF.LowLevel.Types
 import Graphics.PDF.Draw
 import Graphics.PDF.Pages
@@ -49,33 +50,33 @@ import Control.Monad.State
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import Data.Monoid
-        
--- | No information for the document  
-standardDocInfo :: PDFDocumentInfo          
+
+-- | No information for the document
+standardDocInfo :: PDFDocumentInfo
 standardDocInfo = PDFDocumentInfo (toPDFString "") (toPDFString "") UseNone SinglePage standardViewerPrefs True
 
 -- | Create a PDF XObject
-createPDFXForm :: PDFFloat -- ^ Left
-              -> PDFFloat -- ^ Bottom
-              -> PDFFloat -- ^ Right
-              -> PDFFloat -- ^ Top
-              -> Draw a -- ^ Drawing commands
-              -> PDF (PDFReference PDFXForm)
-createPDFXForm xa ya xb yb d = let a' = do modifyStrict $ \s -> s  {otherRsrcs = PDFDictionary. M.fromList $ 
-                                                                       [ (PDFName "Type",AnyPdfObject . PDFName $ "XObject")
-                                                                       , (PDFName "Subtype",AnyPdfObject . PDFName $ "Form")
-                                                                       , (PDFName "FormType",AnyPdfObject . PDFInteger $ 1)
-                                                                       , (PDFName "Matrix",AnyPdfObject . (map (AnyPdfObject . PDFInteger)) $ [1,0,0,1,0,0])
-                                                                       , (PDFName "BBox",AnyPdfObject . (map AnyPdfObject) $ [xa,ya,xb,yb])
-                                                                       ]
-                                                                  }
-                                           d
+createPDFXForm :: Point -- ^ Left, Bottom
+               -> Point -- ^ Right, Top
+               -> Draw a -- ^ Drawing commands
+               -> PDF (PDFReference PDFXForm)
+createPDFXForm a@(xa :+ ya) b@(xb :+ yb) d
+  = let a' = do modifyStrict $ \s ->
+                  s {otherRsrcs = PDFDictionary. M.fromList $
+                       [ (PDFName "Type"     , AnyPdfObject . PDFName $ "XObject")
+                       , (PDFName "Subtype"  , AnyPdfObject . PDFName $ "Form")
+                       , (PDFName "FormType" , AnyPdfObject . PDFInteger $ 1)
+                       , (PDFName "Matrix"   , AnyPdfObject . (map (AnyPdfObject . PDFInteger)) $ [1,0,0,1,0,0])
+                       , (PDFName "BBox"     , AnyPdfObject . (map AnyPdfObject) $ [xa,ya,xb,yb])
+                       ]
+                    }
+                d
  in do
-     PDFReference s <- createContent a' Nothing  
-     recordBound s (xb-xa) (yb-ya)
-     return (PDFReference s)       
+     PDFReference s <- createContent a' Nothing
+     recordBound s (b-a)
+     return (PDFReference s)
 
- 
+
 -- Create a new empty page
 createANewPage :: Maybe PDFRect -- ^ Page size or default document's one
                -> PDF (Int,PDFPage) -- ^ Reference to the new page
@@ -89,7 +90,7 @@ createANewPage rect' = do
        -- Create a new page having as parent the root page
        let page = PDFPage Nothing rect pageContent Nothing Nothing Nothing []
        return (pageref , page)
-       
+
 -- | Add a new page to a PDF document
 addPage :: Maybe PDFRect -- ^ Page size or default document's one
         -> PDF (PDFReference PDFPage) -- ^ Reference to the new page
@@ -98,7 +99,7 @@ addPage rect'   = do
    let pageref = PDFReference pf
    modifyStrict $ \s -> s {pages = recordPage pageref page (pages s), currentPage = Just pageref}
    return pageref
-   
+
 addPageWithTransition :: Maybe PDFRect -- ^ Page size or default document's one
                       -> Maybe PDFFloat -- ^ Optional duration
                       -> Maybe PDFTransition -- ^ Optional transition
@@ -109,7 +110,7 @@ addPageWithTransition rect' dur t = do
     modifyStrict $ \s -> s {pages = recordPage pageref (PDFPage a b c d dur t pageAnnots) (pages s), currentPage = Just pageref}
     return pageref
 
-        
+
 -- | Draw on a given page
 drawWithPage :: PDFReference PDFPage -- ^ Page
             -> Draw a -- ^ Drawing commands

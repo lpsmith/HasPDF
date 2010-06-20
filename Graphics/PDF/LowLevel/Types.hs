@@ -3,7 +3,7 @@
 -- Copyright   : (c) alpha 2006
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -38,7 +38,7 @@ data AnyPdfObject = forall a . PdfObject a => AnyPdfObject a
 
 instance PdfObject AnyPdfObject where
  toPDF (AnyPdfObject a) = toPDF a
- 
+
 -- | An integer in a PDF document
 newtype PDFInteger = PDFInteger Int deriving(Eq,Show,Ord,Num)
 
@@ -54,17 +54,17 @@ instance Num PDFLength where
   fromInteger a = PDFLength (fromInteger a)
 
 -- | A real number in a PDF document
-type PDFFloat = Double 
+type PDFFloat = Double
 
 instance PdfObject PDFInteger where
     toPDF (PDFInteger a) = serialize a
 
 instance PdfObject Int where
     toPDF a = serialize a
-          
+
 instance PdfObject PDFLength where
     toPDF (PDFLength a) = serialize (show a)
-    
+
 instance PdfObject PDFFloat where
   toPDF a = serialize a
 
@@ -72,8 +72,8 @@ instance PdfObject (Complex PDFFloat) where
   toPDF (x :+ y) = mconcat [ serialize x
                            , serialize ' '
                            , serialize y
-                           ] 
-  
+                           ]
+
 instance PdfObject Bool where
   toPDF (True) = serialize "true"
   toPDF (False) = serialize "false"
@@ -86,16 +86,16 @@ toPDFString :: String -> PDFString
 toPDFString = PDFString . S.pack . map encodeISO88591 -- . escapeString
 
 encodeISO88591 :: Char -> Word8
-encodeISO88591 a = 
+encodeISO88591 a =
     let c = fromEnum a in
-    if c < 32 || c >= 256 then 32 else fromIntegral c 
+    if c < 32 || c >= 256 then 32 else fromIntegral c
 
 #if __GLASGOW_HASKELL__ >= 608
 instance SerializeValue L.ByteString PDFString where
   serialize (PDFString t) = L.Chunk t L.Empty
 #else
 instance SerializeValue L.LazyByteString PDFString where
-  serialize (PDFString t) = L.LPS [t] 
+  serialize (PDFString t) = L.LPS [t]
 #endif
 
 instance SerializeValue Builder PDFString where
@@ -143,7 +143,7 @@ newline = serialize  '\n'
 
 noPdfObject :: Monoid s => s
 noPdfObject = mempty
-    
+
 instance PdfObject PDFString where
   toPDF a = mconcat [ lparen
                     , serialize . escapeString $ a
@@ -155,13 +155,13 @@ newtype PDFName = PDFName String deriving(Eq,Ord)
 
 instance PdfObject PDFName where
  toPDF (PDFName a) = serialize ("/" ++ a)
- 
+
 -- | A PDFArray
 type PDFArray = [AnyPdfObject]
 
 instance PdfObject a => PdfObject [a] where
     toPDF l = mconcat $ (lbracket:intersperse bspace (map toPDF l)) ++ [bspace] ++ [rbracket]
-                                 
+
 -- | A PDFDictionary
 
 newtype PDFDictionary = PDFDictionary (M.Map PDFName AnyPdfObject)
@@ -169,7 +169,7 @@ newtype PDFDictionary = PDFDictionary (M.Map PDFName AnyPdfObject)
 instance PdfObject PDFDictionary where
   toPDF (PDFDictionary a) = mconcat $ [blt,blt,newline]
                                        ++ [convertLevel a]
-                                       ++ [bgt,bgt] 
+                                       ++ [bgt,bgt]
    where
      convertLevel _ = let convertItem key value current = mconcat $ [ toPDF key
                                                                     , bspace
@@ -177,14 +177,14 @@ instance PdfObject PDFDictionary where
                                                                     , newline
                                                                     , current
                                                                     ]
-                                                                       
-          in 
+
+          in
            M.foldWithKey convertItem mempty a
-           
+
 -- | Am empty dictionary
 emptyDictionary :: PDFDictionary
 emptyDictionary = PDFDictionary M.empty
-           
+
 isEmptyDictionary :: PDFDictionary -> Bool
 isEmptyDictionary (PDFDictionary d) = M.null d
 
@@ -194,14 +194,14 @@ insertInPdfDict key obj (PDFDictionary d) = PDFDictionary $ M.insert key obj d
 pdfDictUnion :: PDFDictionary -> PDFDictionary -> PDFDictionary
 pdfDictUnion (PDFDictionary a) (PDFDictionary b) = PDFDictionary $ M.union a b
 
-  
+
 -- | A PDF rectangle
 data PDFRect = PDFRect !Int !Int !Int !Int
-  
+
 instance PdfObject PDFRect where
  toPDF (PDFRect a b c d) = toPDF . map (AnyPdfObject . PDFInteger) $ [a,b,c,d]
- 
-      
+
+
 -- | A Referenced objects
 data PDFReferencedObject a = PDFReferencedObject !Int !a
 
@@ -215,7 +215,7 @@ instance PdfObject a => PdfObject (PDFReferencedObject a) where
                , serialize "endobj"
                , newline , newline
                ]
-               
+
 -- | A reference to a PDF object
 data PDFReference s = PDFReference !Int deriving(Eq,Ord,Show)
 
@@ -234,9 +234,9 @@ instance PdfObject s => Num (PDFReference s) where
 instance PdfObject s => PdfObject (PDFReference s) where
   toPDF (PDFReference i) = mconcat $ [ serialize . show $ i
                                      , serialize " 0 R"]
-                                      
-                                   
-               
+
+
+
 instance (PdfObject a,PdfObject b) => PdfObject (Either a b) where
   toPDF (Left a) = toPDF a
   toPDF (Right a) = toPDF a
@@ -245,6 +245,6 @@ modifyStrict :: (MonadState s m) => (s -> s) -> m ()
 modifyStrict f = do
   	s <- get
   	put $! (f s)
-  	
+
 -- | A monad where paths can be created
 class MonadWriter Builder m => MonadPath m
