@@ -691,13 +691,41 @@ interpole n x y = AnyPdfObject . PDFDictionary . M.fromList $
                             , (PDFName "N", AnyPdfObject . PDFInteger $  n)
                             ]
 
+type Radius = Scalar
 -- | A shading
-data PDFShading = AxialShading PDFFloat PDFFloat PDFFloat PDFFloat Color Color
-                | RadialShading PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat PDFFloat Color Color
-                deriving(Eq,Ord)
+data PDFShading = AxialShading !Point !Point !Color !Color
+                | RadialShading !Point !Radius !Point !Radius !Color !Color
+                deriving(Eq)
+
+lexOrd EQ y = y
+lexOrd x  _ = x
+
+infixr 5 `lexOrd`
+
+instance Ord PDFShading where
+   compare (AxialShading (a0 :+ b0) (c0 :+ d0) e0 f0)
+           (AxialShading (a1 :+ b1) (c1 :+ d1) e1 f1)
+         =        compare a0 a1 
+         `lexOrd` compare b0 b1 
+         `lexOrd` compare c0 c1 
+         `lexOrd` compare d0 d1 
+         `lexOrd` compare e0 e1 
+         `lexOrd` compare f0 f1
+   compare (AxialShading _ _ _ _) (RadialShading _ _ _ _ _ _) = LT 
+   compare (RadialShading _ _ _ _ _ _) (AxialShading _ _ _ _) = GT
+   compare (RadialShading (a0 :+ b0) c0 (d0 :+ e0) f0 g0 h0)
+           (RadialShading (a1 :+ b1) c1 (d1 :+ e1) f1 g1 h1)
+         =        compare a0 a1 
+         `lexOrd` compare b0 b1 
+         `lexOrd` compare c0 c1 
+         `lexOrd` compare d0 d1 
+         `lexOrd` compare e0 e1 
+         `lexOrd` compare f0 f1
+         `lexOrd` compare g0 g1 
+         `lexOrd` compare h0 h1
 
 instance PdfResourceObject PDFShading where
-      toRsrc (AxialShading x0 y0 x1 y1 ca cb) = AnyPdfObject . PDFDictionary . M.fromList $
+      toRsrc (AxialShading (x0 :+ y0) (x1 :+ y1) ca cb) = AnyPdfObject . PDFDictionary . M.fromList $
                                  [ (PDFName "ShadingType",AnyPdfObject . PDFInteger $ 2)
                                  , (PDFName "Coords",AnyPdfObject . map AnyPdfObject $ [x0,y0,x1,y1])
                                  , (PDFName "ColorSpace",AnyPdfObject . PDFName $ "DeviceRGB")
@@ -706,7 +734,7 @@ instance PdfResourceObject PDFShading where
         where
             (ra,ga,ba) = getRgbColor ca
             (rb,gb,bb) = getRgbColor cb
-      toRsrc (RadialShading x0 y0 r0 x1 y1 r1 ca cb) = AnyPdfObject . PDFDictionary . M.fromList $
+      toRsrc (RadialShading (x0 :+ y0) r0 (x1 :+ y1) r1 ca cb) = AnyPdfObject . PDFDictionary . M.fromList $
                                          [ (PDFName "ShadingType",AnyPdfObject . PDFInteger $ 3)
                                          , (PDFName "Coords",AnyPdfObject . map AnyPdfObject $ [x0,y0,r0,x1,y1,r1])
                                          , (PDFName "ColorSpace",AnyPdfObject . PDFName $ "DeviceRGB")

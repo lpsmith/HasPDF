@@ -4,7 +4,7 @@
 -- Copyright   : (c) alpha 2007
 -- License     : BSD-style
 --
--- Maintainer  : misc@NOSPAMalpheccar.org
+-- Maintainer  : Leon P Smith <leon@melding-monads.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -53,8 +53,8 @@ lineStyle  = do
 
 shadingTest :: Draw ()
 shadingTest  = do
-     paintWithShading (RadialShading 0 0 50 0 0 600 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Rectangle 0 (300 :+ 300))
-     paintWithShading (AxialShading 300 300 600 400 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Ellipse (300 :+ 300) (600 :+ 400))
+     paintWithShading (RadialShading 0 50 0 600 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Rectangle 0 (300 :+ 300))
+     paintWithShading (AxialShading (300 :+ 300) (600 :+ 400) (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Ellipse (300 :+ 300) (600 :+ 400))
 
 
 patternTest :: PDFReference PDFPage -> PDF ()
@@ -287,7 +287,7 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
                         textStart (0 :+ 0)
                         setFont f
                         displayText (toPDFString [c])
-                    paintWithShading (AxialShading 0 (- getDescent f) w' (getHeight f - getDescent f) (Rgb 1 0 0) (Rgb 0 0 1)) (addShape charRect)
+                    paintWithShading (AxialShading (0 :+ (- getDescent f)) (w' :+ (getHeight f - getDescent f)) (Rgb 1 0 0) (Rgb 0 0 1)) (addShape charRect)
         in
         (BluePara w', c':l)
 
