@@ -127,13 +127,13 @@ rotate = spiral . cis
 
 -- | Translation matrix
 --
--- @transform (translate z) w == z + w@
+-- @transform w (translate z) == w + z@
 translate :: Point -> Matrix
 translate t  = Matrix  (1 :+ 0) (0 :+ 1)  t
 
 -- | @Spiral z@ rotates by @phase z@ and scales by @magnitude z@
 --
--- @transform (spiral z) w == z * w@
+-- @transform w (spiral z) == w * z@
 spiral :: Point -> Matrix
 spiral (x :+ y) = Matrix (x :+ y) ((-y) :+ x) (0 :+ 0)
 
