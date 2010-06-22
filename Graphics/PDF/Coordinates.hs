@@ -69,7 +69,12 @@ projectX (x :+ _) = (x :+ 0)
 projectY :: (RealFloat t) => Complex t -> Complex t
 projectY (_ :+ y) = (0 :+ y)
 
--- | An affine transformation matrix
+-- | An affine transformation matrix.  
+-- @
+-- Matrix (a :+ b)          a b 0
+--        (c :+ d)    ==    c d 0
+--        (e :+ f)          e f 1
+-- @
 data  Matrix
    =  Matrix  !Point  -- ^ X component
               !Point  -- ^ Y component
@@ -80,8 +85,8 @@ instance Num Matrix where
     --  Matrix addition
     (+) (Matrix ma mb mc) (Matrix na nb nc) =
          Matrix (ma+na)  (mb+nb)  (mc+nc)
-    (*) (Matrix na nb nc) m =
-         Matrix (transform0 m na) (transform0 m nb) (transform m nc)
+    (*) (Matrix ma mb mc) n =
+         Matrix (transform0 ma n) (transform0 mb n) (transform mc n)
     negate (Matrix ma mb mc)  =  Matrix  (-ma)  (-mb)  (-mc)
     abs = error "Graphics.PDF.Coordinates:  abs :: Matrix -> Matrix  is not defined"
     signum = error "Graphics.PDF.Coordinates:  signum :: Matrix -> Matrix  is not defined"
@@ -108,15 +113,13 @@ det :: Matrix -> Scalar
 det (Matrix (x0 :+ y0) (x1 :+ y1) _) = x0 * y1 - y0 * x1
 
 -- | Transforms and translates a point.
-transform :: Matrix -> Point -> Point
-transform (Matrix (x0 :+ y0) (x1 :+ y1) (x2 :+ y2)) (x :+ y)
-        = (x*x0 + y*x1 + x2) :+ (x*y0 + y*y1 + y2)
+transform  :: Point -> Matrix -> Point
+transform  (x :+ y) (Matrix ma mb mc) = scalePt x ma + scalePt y mb + mc
 
 -- | Transforms a point without translating it.
 -- The zero at the end of the name refers to homogeneous coordinates.
-transform0 :: Matrix -> Point -> Point
-transform0 (Matrix (x0 :+ y0) (x1 :+ y1) _) (x :+ y)
-        = (x*x0 + y*x1) :+ (x*y0 + y*y1)
+transform0 :: Point -> Matrix -> Point
+transform0 (x :+ y) (Matrix ma mb _ ) = scalePt x ma + scalePt y mb
 
 -- | Rotation matrix
 rotate :: Radian -> Matrix

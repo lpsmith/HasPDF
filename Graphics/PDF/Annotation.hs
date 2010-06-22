@@ -62,10 +62,10 @@ data PDFLink = PDFLink
 
 applyMatrixToRectangle :: Matrix -> Rectangle -> Rectangle
 applyMatrixToRectangle m (Rectangle (xa :+ ya) (xb :+ yb)) =
-    let (xa'  :+ ya' ) = m `transform` (xa :+ ya)
-        (xa'' :+ yb' ) = m `transform` (xa :+ yb)
-        (xb'  :+ ya'') = m `transform` (xb :+ ya)
-        (xb'' :+ yb'') = m `transform` (xb :+ yb)
+    let (xa'  :+ ya' ) = (xa :+ ya) `transform` m
+        (xa'' :+ yb' ) = (xa :+ yb) `transform` m
+        (xb'  :+ ya'') = (xb :+ ya) `transform` m
+        (xb'' :+ yb'') = (xb :+ yb) `transform` m
         x1 = minimum [xa',xa'',xb',xb'']
         x2 = maximum [xa',xa'',xb',xb'']
         y1 = minimum [ya',ya'',yb',yb'']
