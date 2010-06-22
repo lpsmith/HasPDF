@@ -145,7 +145,7 @@ instance Show (HBox s) where
 -- | Draw a line of words and glue using the word style
 drawTextLine :: (Style s) => s -> [HBox s] -> Point -> Draw ()
 drawTextLine  _ [] _ = return ()
-drawTextLine  style l@(a:l') (x :+ y) 
+drawTextLine  style l@(a:l') (x :+ y)
   | (isJust . wordStyle $ style) =  do
       let  h = boxHeight a
            d = boxDescent a
@@ -304,28 +304,25 @@ instance (Style s) => DisplayableBox (HBox s) where
          drawLineOfHboxes he de l xy
 
      strokeBox a@(HGlue w _ (Just style)) (x :+ y) = do
-         let de = boxDescent a
-             he = boxHeight a
-             y' = y - he + de
+         let y' = y - boxHeight a
          -- In word mode we have to apply a special function to the word
          -- otherwise we apply a different function to the sentence
          if (isJust . wordStyle $ style)
              then
-                 (fromJust . wordStyle $ style) (Rectangle (x :+ (y' - de)) ((x+w) :+ (y' - de + he))) DrawGlue (return ())
+                 (fromJust . wordStyle $ style) (Rectangle (x :+ y') ((x+w) :+ y)) DrawGlue (return ())
              else
                  return ()
 
      strokeBox a@(Text style t w) (x :+ y) = do
-         let de = boxDescent a
-             he = boxHeight a
-             y' = y - he + de
+         let y'  = y  - boxHeight  a
+             y'' = y' + boxDescent a
          -- In word mode we have to apply a special function to the word
          -- otherwise we apply a different function to the sentence
          if (isJust . wordStyle $ style)
              then
-                 (fromJust . wordStyle $ style) (Rectangle (x :+ (y' - de)) ((x+w) :+ (y' - de + he))) DrawWord (drawText $ drawTheTextBox OneBlock style (x :+ y') (Just t))
+                 (fromJust . wordStyle $ style) (Rectangle (x :+ y') ((x+w) :+ y)) DrawWord (drawText $ drawTheTextBox OneBlock style (x :+ y'') (Just t))
              else
-                 drawText $ drawTheTextBox OneBlock style (x :+ y') (Just t)
+                 drawText $ drawTheTextBox OneBlock style (x :+ y'') (Just t)
 
      strokeBox (SomeHBox _ a _) xy = strokeBox a xy
      strokeBox (HGlue _ _ _) _ = return ()
