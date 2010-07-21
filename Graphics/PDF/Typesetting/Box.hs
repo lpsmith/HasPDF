@@ -26,7 +26,6 @@ module Graphics.PDF.Typesetting.Box (
 import Graphics.PDF.LowLevel.Types
 import Graphics.PDF.Draw
 import Graphics.PDF.Text
-import Graphics.PDF.Shapes
 import Graphics.PDF.Coordinates
 
 -- | Make a drawing box. A box object containing a Draw value
@@ -79,11 +78,11 @@ class ComparableStyle a where
 class ComparableStyle a => Style a where
     -- ^ Modify the look of a sentence (sequence of words using the same style on a line)
     sentenceStyle :: a -- ^ The style
-                  -> Maybe (Rectangle -> Draw b -> Draw ()) -- ^ Function receiving the bounding rectangle and the command for drawing the sentence
+                  -> Maybe (Rect -> Draw b -> Draw ()) -- ^ Function receiving the bounding rectangle and the command for drawing the sentence
     sentenceStyle _ = Nothing
     -- ^ Modify the look of a word
     wordStyle :: a -- ^ The style
-              -> Maybe (Rectangle -> StyleFunction -> Draw b -> Draw ()) -- ^ Word styling function
+              -> Maybe (Rect -> StyleFunction -> Draw b -> Draw ()) -- ^ Word styling function
     wordStyle _ = Nothing
     textStyle :: a -> TextStyle
     -- | A style may contain data changed from word to word

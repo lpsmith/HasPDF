@@ -78,7 +78,7 @@ createPDFXForm a@(xa :+ ya) b@(xb :+ yb) d
 
 
 -- Create a new empty page
-createANewPage :: Maybe PDFRect -- ^ Page size or default document's one
+createANewPage :: Maybe Rect -- ^ Page size or default document's one
                -> PDF (Int,PDFPage) -- ^ Reference to the new page
 createANewPage rect' = do
        rect <- maybe (gets defaultRect) return rect'
@@ -92,7 +92,7 @@ createANewPage rect' = do
        return (pageref , page)
 
 -- | Add a new page to a PDF document
-addPage :: Maybe PDFRect -- ^ Page size or default document's one
+addPage :: Maybe Rect -- ^ Page size or default document's one
         -> PDF (PDFReference PDFPage) -- ^ Reference to the new page
 addPage rect'   = do
    (pf,page) <- createANewPage rect'
@@ -100,7 +100,7 @@ addPage rect'   = do
    modifyStrict $ \s -> s {pages = recordPage pageref page (pages s), currentPage = Just pageref}
    return pageref
 
-addPageWithTransition :: Maybe PDFRect -- ^ Page size or default document's one
+addPageWithTransition :: Maybe Rect -- ^ Page size or default document's one
                       -> Maybe PDFFloat -- ^ Optional duration
                       -> Maybe PDFTransition -- ^ Optional transition
                       -> PDF (PDFReference PDFPage) -- ^ Reference to the new page

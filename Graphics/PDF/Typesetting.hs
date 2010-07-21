@@ -107,12 +107,12 @@ import Data.Char(isSpace,isAlpha)
 
 -- | Display a formatted text in a given bounding rectangle with a given default paragraph style, a given default text style. No clipping
 -- is taking place. Drawing stop when the last line is crossing the bounding rectangle in vertical direction
-displayFormattedText :: (ParagraphStyle ps s) => Rectangle -- ^ Text area
+displayFormattedText :: (ParagraphStyle ps s) => Rect -- ^ Text area
                      -> ps -- ^ default vertical style
                      -> s -- ^ Default horizontal style
                      -> TM ps s a -- ^ Typesetting monad
                      -> Draw a -- ^ Draw monad
-displayFormattedText (Rectangle (xa :+ ya) (xb :+ yb)) defaultVStyle defaultHStyle t  =
+displayFormattedText (Rect (xa :+ ya) (xb :+ yb)) defaultVStyle defaultHStyle t  =
     do
     --withNewContext $ do
     --    addShape $ Rectangle (xa-1) y' (xb+1) y''
@@ -431,13 +431,13 @@ drawTextBox :: (ParagraphStyle ps s, Style s)
             -> ps -- ^ default vertical style
             -> s -- ^ Default horizontal style
             -> TM ps s a -- ^ Typesetting monad
-            -> (Rectangle,Draw ())
+            -> (Rect,Draw ())
 drawTextBox (x :+ y) (w :+ h) ori ps p t =
     let b = getBoxes ps p t
         sh = styleHeight p
         c = mkContainer 0 (w :+ h) sh
         (d,c',_) = fillContainer (defaultVerState ps) c b
-        Rectangle (xa :+ ya) (xb :+ yb)  = containerContentRectangle  c'
+        Rect (xa :+ ya) (xb :+ yb)  = containerContentRectangle  c'
         wc = xb - xa
         hc = yb - ya
         (dx,dy) = case ori of
@@ -452,6 +452,6 @@ drawTextBox (x :+ y) (w :+ h) ori ps p t =
         box = withNewContext $ do
     	   applyMatrix $ translate (dx :+ dy)
     	   d
-        r = Rectangle ((xa + dx) :+ (ya + dy)) ((xb + dx) :+ (yb + dy))
+        r = Rect ((xa + dx) :+ (ya + dy)) ((xb + dx) :+ (yb + dy))
     in
     (r,box)

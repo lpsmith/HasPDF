@@ -32,16 +32,16 @@ fontDebug f t = do
      strokeColor $ Rgb 1 0 0
      stroke $ Line (10 :+ 200) (612 :+ 200)
      fill $ Circle (10 :+ 200) 10
-     stroke $ Rectangle (10 :+ (200.0 - (getDescent f))) ((10.0 + textWidth f t) :+ (200.0 - getDescent f + getHeight f))
+     stroke $ Rect (10 :+ (200.0 - (getDescent f))) ((10.0 + textWidth f t) :+ (200.0 - getDescent f + getHeight f))
 
 
 geometryTest :: Draw ()
 geometryTest  = do
         strokeColor red
-        stroke $ Rectangle 0 (200 :+ 100)
+        stroke $ Rect 0 (200 :+ 100)
         fillColor blue
         fill $ Ellipse (100 :+ 100) (300 :+ 200)
-        fillAndStroke $ RoundRectangle 32 32 (200 :+ 200) (600 :+ 400)
+        fillAndStroke $ RoundRect 32 32 (200 :+ 200) (600 :+ 400)
 
 lineStyle ::Draw ()
 lineStyle  = do
@@ -53,7 +53,7 @@ lineStyle  = do
 
 shadingTest :: Draw ()
 shadingTest  = do
-     paintWithShading (RadialShading 0 50 0 600 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Rectangle 0 (300 :+ 300))
+     paintWithShading (RadialShading 0 50 0 600 (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Rect 0 (300 :+ 300))
      paintWithShading (AxialShading (300 :+ 300) (600 :+ 400) (Rgb 1 0 0) (Rgb 0 0 1)) (addShape $ Ellipse (300 :+ 300) (600 :+ 400))
 
 
@@ -111,10 +111,10 @@ testAnnotation p = do
         r
  where r = do
         strokeColor red
-        newAnnotation (URLLink (toPDFString "Go to my blog") (Rectangle (0 :+ 0) (200 :+ 100)) "http://www.alpheccar.org" True)
+        newAnnotation (URLLink (toPDFString "Go to my blog") (Rect (0 :+ 0) (200 :+ 100)) "http://www.alpheccar.org" True)
         drawText $ text (PDFFont Times_Roman 12) (10 :+ 30) (toPDFString "Go to my blog")
-        stroke $ Rectangle 0 (200 :+ 100)
-        newAnnotation (TextAnnotation (toPDFString "Key annotation") (Rectangle (100 :+ 100) (130 :+ 130)) Key)
+        stroke $ Rect 0 (200 :+ 100)
+        newAnnotation (TextAnnotation (toPDFString "Key annotation") (Rect (100 :+ 100) (130 :+ 130)) Key)
 
 textTest :: Draw ()
 textTest = do
@@ -191,7 +191,7 @@ instance Style MyParaStyles where
     wordStyle (SuperCrazy l _) = Just ws
      where
         ws _ DrawGlue _ = return ()
-        ws (Rectangle (xa :+ ya) (xb :+ yb)) DrawWord drawWord = do
+        ws (Rect (xa :+ ya) (xb :+ yb)) DrawWord drawWord = do
             let [a,b,c,d,e,f,g,h] :: [PDFFloat] = map (\x -> x / 16.0) . map fromIntegral . take 8 $ l
                 --angle = head angl
                 p = Polygon [ (xa-a) :+ (ya+b)
@@ -222,15 +222,15 @@ instance Style MyParaStyles where
 
 
 
-crazyWord :: Rectangle -> StyleFunction -> Draw a -> Draw ()
-crazyWord r@(Rectangle (xa :+ ya) (xb :+ yb)) DrawWord d = do
+crazyWord :: Rect -> StyleFunction -> Draw a -> Draw ()
+crazyWord r@(Rect (xa :+ ya) (xb :+ yb)) DrawWord d = do
     fillColor $ Rgb 0.6 1 0.6
     fill r
     d
     strokeColor $ Rgb 0 0 1
     let m = (ya+yb)/2.0
     stroke $ Line (xa :+ m) (xb :+ m)
-crazyWord (Rectangle a b) DrawGlue _ = do
+crazyWord (Rect a b) DrawGlue _ = do
     fillColor $ Rgb 0 0 1
     fill (Circle ((a + b) / 2) (abs (realPart b - realPart a) / 2))
 
@@ -274,7 +274,7 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
     paragraphChange (BluePara _) _ (AChar st c _:l) =
         let f = PDFFont Helvetica_Bold 45
             w' = charWidth f c
-            charRect = Rectangle (0 :+ (- getDescent f)) (w' :+ (getHeight f - getDescent f))
+            charRect = Rect (0 :+ (- getDescent f)) (w' :+ (getHeight f - getDescent f))
             c' = mkLetter (0,0,0) Nothing . mkDrawBox $ do
                 withNewContext $ do
                     applyMatrix $ translate ((-w') :+ (getDescent f - getHeight f + styleHeight st - styleDescent st))
@@ -293,8 +293,8 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
 
     paragraphChange s _ l = (s,l)
 
-    paragraphStyle (BluePara _) = Just $ \(Rectangle (xa :+ ya) (xb :+ yb)) b -> do
-        let f = Rectangle ((xa-3) :+ (ya-3)) ((xb+3) :+ (yb+3))
+    paragraphStyle (BluePara _) = Just $ \(Rect (xa :+ ya) (xb :+ yb)) b -> do
+        let f = Rect ((xa-3) :+ (ya-3)) ((xb+3) :+ (yb+3))
         fillColor $ Rgb 0.6 0.6 1
         fill f
         b
@@ -304,8 +304,8 @@ instance ParagraphStyle MyVertStyles MyParaStyles  where
     paragraphStyle _ = Nothing
 
 
-containerTest :: PDFReference PDFPage -> Rectangle ->( TM StandardParagraphStyle StandardStyle ())   -> PDF ()
-containerTest p (Rectangle (xa :+ ya) (xb :+ yb)) theText =
+containerTest :: PDFReference PDFPage -> Rect ->( TM StandardParagraphStyle StandardStyle ())   -> PDF ()
+containerTest p (Rect (xa :+ ya) (xb :+ yb)) theText =
     let c = mkContainer (xa :+ ya) (xb :+ yb) 0
         (d,c',r) = fillContainer (defaultVerState NormalParagraph) c . getBoxes NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
             theText
@@ -319,7 +319,7 @@ containerTest p (Rectangle (xa :+ ya) (xb :+ yb)) theText =
           w = containerWidth c'
           --h = containerHeight c'
       strokeColor red
-      stroke $ Rectangle (x :+ y) ((x+w) :+ (ya-100-yb))
+      stroke $ Rect (x :+ y) ((x+w) :+ (ya-100-yb))
       strokeColor blue
       stroke $ containerContentRectangle c'
       stroke $ containerContentRectangle c''
@@ -439,24 +439,24 @@ typesetTest test page = do
     drawWithPage page $ do
       --strokeColor red
       --setWidth 0.5
-      --stroke $ Rectangle 10 0 (10+maxw) 300
+      --stroke $ Rect (10 :+ 0) ((10+maxw) :+ 300)
       --stroke $ Line 10 textStart (10+maxw) textStart
       strokeColor black
       case test of
           0 -> do
                 strokeColor red
                 stroke $ Line (10 :+ 300) ((10+100) :+ 300)
-                displayFormattedText (Rectangle (10 :+ 0) ((10+100) :+ 300)) NormalPara Normal simpleText
+                displayFormattedText (Rect (10 :+ 0) ((10+100) :+ 300)) NormalPara Normal simpleText
           1 -> do
               strokeColor red
               stroke $ Line (10 :+ 400) ((10+maxw) :+ 400)
-              displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 400)) NormalPara Normal myText
+              displayFormattedText (Rect (10 :+ 0) ((10+maxw) :+ 400)) NormalPara Normal myText
           2 -> do
               strokeColor red
               stroke $ Line (10 :+ 300) ((10+maxw) :+ 300)
-              displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 300)) NormalPara Normal debugText
+              displayFormattedText (Rect (10 :+ 0) ((10+maxw) :+ 300)) NormalPara Normal debugText
           3 -> do
-              let r = (Rectangle (10 :+ 200) ((10+maxw) :+ 300))
+              let r = (Rect (10 :+ 200) ((10+maxw) :+ 300))
               displayFormattedText r CirclePara Normal $ do
                    setStyle Normal
                    setFirstPassTolerance 5000
@@ -470,60 +470,60 @@ typesetTest test page = do
                        txt $ "Ut enim ad minim"
               strokeColor red
               stroke r
-          4 -> displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) standardStyleTest
+          4 -> displayFormattedText (Rect (10 :+ 0) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) standardStyleTest
           5 -> do
               strokeColor red
-              stroke $ Rectangle (10 :+ 300) ((10+maxw) :+ 400)
-              displayFormattedText (Rectangle (10 :+ 300) ((10+maxw) :+ 400)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+              stroke $ Rect(10 :+ 300) ((10+maxw) :+ 400)
+              displayFormattedText (Rect (10 :+ 300) ((10+maxw) :+ 400)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification Centered
                   testText
 
               strokeColor red
-              stroke $ Rectangle (10 :+ 200) ((10+maxw) :+ 300)
-              displayFormattedText (Rectangle (10 :+ 200) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+              stroke $ Rect (10 :+ 200) ((10+maxw) :+ 300)
+              displayFormattedText (Rect (10 :+ 200) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification LeftJustification
                   testText
 
               strokeColor red
-              stroke $ Rectangle (10 :+ 100) ((10+maxw) :+ 200)
-              displayFormattedText (Rectangle (10 :+ 100) ((10+maxw) :+ 200)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+              stroke $ Rect (10 :+ 100) ((10+maxw) :+ 200)
+              displayFormattedText (Rect (10 :+ 100) ((10+maxw) :+ 200)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification RightJustification
                   testText
               strokeColor red
               fillColor blue
-              stroke $ Rectangle (10 :+ 0) ((10+maxw) :+ 100)
+              stroke $ Rect (10 :+ 0) ((10+maxw) :+ 100)
               drawText $ text (PDFFont Helvetica_Bold 24) (10 :+ 100) (toPDFString "Lorem ipsum")
               stroke $ Line (10 :+ 120) ((10 + textWidth (PDFFont Helvetica_Bold 24) (toPDFString "Lorem ipsum") ) :+ 120)
-              displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+              displayFormattedText (Rect (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                   setJustification LeftJustification
                   paragraph $ do
                       setStyle (Font (PDFFont Helvetica_Bold 24) black black)
                       txt $ "Lorem ipsum"
           6 -> do
                 strokeColor red
-                stroke $ Rectangle (10 :+ 300) ((10+maxw) :+ 400)
-                displayFormattedText (Rectangle (10 :+ 300) ((10+maxw) :+ 400)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+                stroke $ Rect (10 :+ 300) ((10+maxw) :+ 400)
+                displayFormattedText (Rect (10 :+ 300) ((10+maxw) :+ 400)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification Centered
                     testBreakText
 
                 strokeColor red
-                stroke $ Rectangle (10 :+ 200) ((10+maxw) :+ 300)
-                displayFormattedText (Rectangle (10 :+ 200) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+                stroke $ Rect (10 :+ 200) ((10+maxw) :+ 300)
+                displayFormattedText (Rect (10 :+ 200) ((10+maxw) :+ 300)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification LeftJustification
                     testBreakText
 
                 strokeColor red
-                stroke $ Rectangle (10 :+ 100) ((10+maxw) :+ 200)
-                displayFormattedText (Rectangle (10 :+ 100) ((10+maxw) :+ 200)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+                stroke $ Rect (10 :+ 100) ((10+maxw) :+ 200)
+                displayFormattedText (Rect (10 :+ 100) ((10+maxw) :+ 200)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification RightJustification
                     testBreakText
 
                 strokeColor red
-                stroke $ Rectangle (10 :+ 0) ((10+maxw) :+ 100)
-                displayFormattedText (Rectangle (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
+                stroke $ Rect (10 :+ 0) ((10+maxw) :+ 100)
+                displayFormattedText (Rect (10 :+ 0) ((10+maxw) :+ 100)) NormalParagraph (Font (PDFFont Times_Roman 10) black black) $ do
                     setJustification FullJustification
                     testBreakText
-          _ -> displayFormattedText (Rectangle (0 :+ 300) ((10+maxw) :+ 300)) NormalPara Normal myText
+          _ -> displayFormattedText (Rect (0 :+ 300) ((10+maxw) :+ 300)) NormalPara Normal myText
 
 textBoxes :: Draw ()
 textBoxes = do
@@ -576,8 +576,8 @@ testAll jpg = do
 
      page3c <- addPage Nothing
      newSection (toPDFString "Container") Nothing Nothing $ do
-            containerTest page3c (Rectangle (10 :+ 300)  (100 :+ 100)) testText
-            containerTest page3c (Rectangle (210 :+ 300) (200 :+ 100)) $ do
+            containerTest page3c (Rect (10 :+ 300)  (100 :+ 100)) testText
+            containerTest page3c (Rect (210 :+ 300) (200 :+ 100)) $ do
                 setJustification Centered
                 testText
 
@@ -632,7 +632,7 @@ testAll jpg = do
 
 main :: IO()
 main = do
-    let rect = PDFRect 0 0 600 400
+    let rect = Rect (0 :+ 0) (600 :+ 400)
     Right jpg <- readJpegFile "logo.jpg"
     runPdf "demo.pdf" (standardDocInfo { author=toPDFString "alpheccar", compressed = False}) rect $ do
         testAll jpg

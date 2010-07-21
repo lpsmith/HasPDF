@@ -32,12 +32,12 @@ module Graphics.PDF.Shapes(
    -- ** Usual shapes
    , Shape(..)
    , Line(..)
-   , Rectangle(..)
+   , Rect(..)
    , Polygon(..)
    , Arc(..)
    , Ellipse(..)
    , Circle(..)
-   , RoundRectangle(..)
+   , RoundRect(..)
    -- ** Style
    , CapStyle(..)
    , JoinStyle(..)
@@ -90,9 +90,8 @@ instance Shape Line where
     fillEO _ = error "Can't fill a line !"
     fillAndStrokeEO _ = error "Can't fill a line !"
 
-data Rectangle = Rectangle !Point !Point deriving (Eq)
-instance Shape Rectangle where
- addShape (Rectangle a b)
+instance Shape Rect where
+ addShape (Rect a b)
      = tell . mconcat $ [ serialize '\n'
                         , toPDF a
                         , serialize ' '
@@ -123,9 +122,9 @@ instance Shape Ellipse where
         addBezierCubic ((xm - w) :+ y1) (x0 :+ (ym + h)) (x0 :+ ym)
         addBezierCubic (x0 :+ (ym - h)) ((xm - w) :+ y0) (xm :+ y0)
 
-data RoundRectangle = RoundRectangle !PDFFloat !PDFFloat !Point !Point deriving(Eq)
-instance Shape RoundRectangle where
-    addShape (RoundRectangle rw rh (x0 :+ y0) (x1 :+ y1)) = do
+data RoundRect = RoundRect !PDFFloat !PDFFloat !Point !Point deriving(Eq)
+instance Shape RoundRect where
+    addShape (RoundRect rw rh (x0 :+ y0) (x1 :+ y1)) = do
         let k = 0.5522847498
             h = k*rw
             w = k*rh

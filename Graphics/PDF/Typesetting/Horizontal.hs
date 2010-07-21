@@ -211,7 +211,7 @@ startDrawingNewLineOfText hl dl l (x :+ y) style =
            w' = foldl' (\x' ny -> x' + boxWidth ny) 0.0 l'
        if (isJust . sentenceStyle $ style)
              then do
-                 (fromJust . sentenceStyle $ style) (Rectangle (x :+ (y - hl)) ((x+w') :+ y)) (drawTextLine style l' (x :+ y'))
+                 (fromJust . sentenceStyle $ style) (Rect (x :+ (y - hl)) ((x+w') :+ y)) (drawTextLine style l' (x :+ y'))
              else do
                  drawTextLine style l' (x :+ y')
        drawLineOfHboxes hl dl l'' ((x + w') :+ y)
@@ -309,7 +309,7 @@ instance (Style s) => DisplayableBox (HBox s) where
          -- otherwise we apply a different function to the sentence
          if (isJust . wordStyle $ style)
              then
-                 (fromJust . wordStyle $ style) (Rectangle (x :+ y') ((x+w) :+ y)) DrawGlue (return ())
+                 (fromJust . wordStyle $ style) (Rect (x :+ y') ((x+w) :+ y)) DrawGlue (return ())
              else
                  return ()
 
@@ -320,7 +320,7 @@ instance (Style s) => DisplayableBox (HBox s) where
          -- otherwise we apply a different function to the sentence
          if (isJust . wordStyle $ style)
              then
-                 (fromJust . wordStyle $ style) (Rectangle (x :+ y') ((x+w) :+ y)) DrawWord (drawText $ drawTheTextBox OneBlock style (x :+ y'') (Just t))
+                 (fromJust . wordStyle $ style) (Rect (x :+ y') ((x+w) :+ y)) DrawWord (drawText $ drawTheTextBox OneBlock style (x :+ y'') (Just t))
              else
                  drawText $ drawTheTextBox OneBlock style (x :+ y'') (Just t)
 

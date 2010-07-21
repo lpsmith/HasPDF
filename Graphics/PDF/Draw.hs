@@ -367,7 +367,7 @@ data PdfState = PdfState { supplySrc :: !Int -- ^ Supply of unique identifiers
                          , pages :: !Pages -- ^ Pages
                          , streams :: !(IM.IntMap ((Maybe (PDFReference PDFPage)),(DrawState,BU.Builder))) -- ^ Draw commands
                          , catalog :: !(PDFReference PDFCatalog) -- ^ Reference to the PDF catalog
-                         , defaultRect :: !PDFRect -- ^ Default page size
+                         , defaultRect :: !Rect -- ^ Default page size
                          , docInfo :: !PDFDocumentInfo -- ^ Document infos
                          , outline :: Maybe Outline -- ^ Root outline
                          , currentPage :: Maybe (PDFReference PDFPage) -- ^ Reference to the current page used to create outlines
@@ -379,7 +379,7 @@ data PdfState = PdfState { supplySrc :: !Int -- ^ Supply of unique identifiers
 #ifndef __HADDOCK__
 data PDFPage = PDFPage
           !(Maybe (PDFReference PDFPages)) --  Reference to parent
-          !(PDFRect) -- Media box
+          !(Rect) -- Media box
           !(PDFReference PDFStream) -- Reference to content
           !(Maybe (PDFReference PDFResource)) -- Reference to resources
           !(Maybe PDFFloat) -- Optional duration

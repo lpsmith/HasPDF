@@ -12,6 +12,8 @@
 -- #hide
 module Graphics.PDF.LowLevel.Types where
 
+import Graphics.PDF.Coordinates
+
 import qualified Data.Map as M
 import Data.List(intersperse)
 import Data.Int
@@ -196,10 +198,11 @@ pdfDictUnion (PDFDictionary a) (PDFDictionary b) = PDFDictionary $ M.union a b
 
 
 -- | A PDF rectangle
-data PDFRect = PDFRect !Int !Int !Int !Int
+data Rect = Rect !Point !Point deriving(Eq)
 
-instance PdfObject PDFRect where
- toPDF (PDFRect a b c d) = toPDF . map (AnyPdfObject . PDFInteger) $ [a,b,c,d]
+instance PdfObject Rect where
+  toPDF (Rect (a :+ b) (c :+ d)) 
+    = toPDF . map (AnyPdfObject . PDFInteger . round) $ [a,b,c,d]
 
 
 -- | A Referenced objects

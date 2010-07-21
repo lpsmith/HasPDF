@@ -39,7 +39,6 @@ import Graphics.PDF.LowLevel.Types
 import Graphics.PDF.Typesetting.Breaking
 import Graphics.PDF.Draw
 import Graphics.PDF.Coordinates
-import Graphics.PDF.Shapes(Rectangle(..))
 import Graphics.PDF.Typesetting.Box
 import Data.List(foldl')
 import Data.Maybe(isJust,fromJust)
@@ -107,7 +106,7 @@ instance (ParagraphStyle ps s) => DisplayableBox (VBox ps s) where
         strokeBox (VGlue h w delta _ (Just style)) xy =
             if (isJust . interline $ style)
                 then
-                    (fromJust . interline $ style) $ Rectangle (xy + (delta :+ (-h))) (xy + ((w+delta) :+ 0))
+                    (fromJust . interline $ style) $ Rect (xy + (delta :+ (-h))) (xy + ((w+delta) :+ 0))
                 else
                    return()
         strokeBox (VGlue _ _ _ _ _) __ = return ()
@@ -172,8 +171,8 @@ containerY :: Container ps s -> PDFFloat
 containerY (Container (_ :+ y) _ _ _ _ _ _) = y
 
 -- | Return the rectangle containing the text after formatting and glue dilatation
-containerContentRectangle :: Container ps s -> Rectangle
-containerContentRectangle c = Rectangle ((x+l) :+ (y-th)) ((x+r) :+ y)
+containerContentRectangle :: Container ps s -> Rect
+containerContentRectangle c = Rect ((x+l) :+ (y-th)) ((x+r) :+ y)
  where
     x = containerX c
     y = containerY c
@@ -259,7 +258,7 @@ class (ComparableStyle a, Style s) => ParagraphStyle a s | a -> s where
 
     -- | How to style the interline glues added in a paragraph by the line breaking algorithm
     interline :: a -- ^ The style
-              -> Maybe (Rectangle -> Draw ()) -- ^ Function used to style interline glues
+              -> Maybe (Rect -> Draw ()) -- ^ Function used to style interline glues
     interline _ = Nothing
     lineWidth _ w _ = w
     linePosition _ _ = const 0.0
@@ -273,7 +272,7 @@ class (ComparableStyle a, Style s) => ParagraphStyle a s | a -> s where
 
     -- | Get the paragraph bounding box and the paragraph draw command to apply additional effects
     paragraphStyle :: a -- ^ The style
-                   -> Maybe (Rectangle -> Draw b -> Draw ()) -- ^ Function used to style a paragraph
+                   -> Maybe (Rect -> Draw b -> Draw ()) -- ^ Function used to style a paragraph
     paragraphStyle _ = Nothing
 
 -- | Get the delta used to position a box with non rectangular shapes
@@ -314,7 +313,7 @@ drawWithParaStyle style b (xa :+ y') = do
       then do
           let xleft = (minimum $ 100000:map getBoxDelta l' ) + xa
               xright = (maximum $ 0:(map (\x -> boxWidth x + getBoxDelta x) l')) + xa
-          (fromJust . paragraphStyle $ style) (Rectangle (xleft :+ (y'- h')) (xright :+ y')) (recurseStrokeVBoxes 1 l' (xa :+ y'))
+          (fromJust . paragraphStyle $ style) (Rect (xleft :+ (y'- h')) (xright :+ y')) (recurseStrokeVBoxes 1 l' (xa :+ y'))
       else
          recurseStrokeVBoxes 1 l' (xa :+ y')
     strokeVBoxes l'' (xa :+ (y' - h'))

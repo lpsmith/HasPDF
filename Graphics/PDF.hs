@@ -16,7 +16,7 @@ module Graphics.PDF
     PDF
   , runPdf
   -- ** PDF Common Types
-  , PDFRect(..)
+  , Rect(..)
   , PDFFloat
   , PDFReference
   , PDFString
@@ -201,7 +201,7 @@ defaultPdfSettings =
            , pages = noPages
            , streams = IM.empty
            , catalog = PDFReference 0
-           , defaultRect = PDFRect 0 0 600 400
+           , defaultRect = Rect (0 :+ 0) (600 :+ 400)
            , docInfo = standardDocInfo { author=toPDFString "Unknown", compressed = True}
            , outline = Nothing
            , currentPage = Nothing
@@ -236,7 +236,7 @@ createObjectByteStrings pdfState m =
 -- | Generates a PDF document
 runPdf :: String -- ^ Name of the PDF document
        -> PDFDocumentInfo
-       -> PDFRect -- ^ Default size for a page
+       -> Rect -- ^ Default size for a page
        -> PDF a  -- ^ PDF action
        -> IO ()
 runPdf filename infos rect m = do

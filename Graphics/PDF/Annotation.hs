@@ -45,23 +45,23 @@ data TextIcon
 
 data TextAnnotation = TextAnnotation
    !PDFString -- ^ Content
-   !Rectangle -- ^ Rect
+   !Rect      -- ^ Rect
    !TextIcon
 data URLLink = URLLink
   !PDFString -- ^ Content
-  !Rectangle -- ^ Rect
+  !Rect -- ^ Rect
   !String -- ^ URL
   !Bool -- ^ Border
 data PDFLink = PDFLink
   !PDFString -- ^ Content
-  !Rectangle -- ^ Rect
+  !Rect -- ^ Rect
   !(PDFReference PDFPage) -- ^ Page
   !Point
   !Bool -- ^ Border
 --data Screen = Screen (PDFReference Rendition) PDFString [PDFFloat] (PDFReference PDFPage) (Maybe (PDFReference ControlMedia)) (Maybe (PDFReference ControlMedia))
 
-applyMatrixToRectangle :: Matrix -> Rectangle -> Rectangle
-applyMatrixToRectangle m (Rectangle (xa :+ ya) (xb :+ yb)) =
+applyMatrixToRectangle :: Matrix -> Rect -> Rect
+applyMatrixToRectangle m (Rect (xa :+ ya) (xb :+ yb)) =
     let (xa'  :+ ya' ) = (xa :+ ya) `transform` m
         (xa'' :+ yb' ) = (xa :+ yb) `transform` m
         (xb'  :+ ya'') = (xb :+ ya) `transform` m
@@ -70,7 +70,7 @@ applyMatrixToRectangle m (Rectangle (xa :+ ya) (xb :+ yb)) =
         x2 = maximum [xa',xa'',xb',xb'']
         y1 = minimum [ya',ya'',yb',yb'']
         y2 = maximum [ya',ya'',yb',yb'']
-    in  Rectangle (x1 :+ y1) (x2 :+ y2)
+    in  Rect (x1 :+ y1) (x2 :+ y2)
 
 -- | Get the border shqpe depending on the style
 getBorder :: Bool -> [PDFInteger]
@@ -112,7 +112,7 @@ instance AnnotationObject TextAnnotation where
     addAnnotation = addObject
     annotationType _ = PDFName "Text"
     annotationContent (TextAnnotation s _ _) = s
-    annotationRect (TextAnnotation _ (Rectangle (x0 :+ y0) (x1 :+ y1)) _) = [x0,y0,x1,y1]
+    annotationRect (TextAnnotation _ (Rect (x0 :+ y0) (x1 :+ y1)) _) = [x0,y0,x1,y1]
     annotationToGlobalCoordinates (TextAnnotation a r b) = do
         gr <- transformAnnotRect r
         return $ TextAnnotation a gr b
@@ -128,7 +128,7 @@ instance AnnotationObject URLLink where
     addAnnotation = addObject
     annotationType _ = PDFName "Link"
     annotationContent (URLLink s _ _ _) = s
-    annotationRect (URLLink _ (Rectangle (x0 :+ y0) (x1 :+ y1)) _ _) = [x0,y0,x1,y1]
+    annotationRect (URLLink _ (Rect (x0 :+ y0) (x1 :+ y1)) _ _) = [x0,y0,x1,y1]
     annotationToGlobalCoordinates (URLLink a r b c) = do
         gr <- transformAnnotRect r
         return $ URLLink a gr b c
@@ -150,12 +150,12 @@ instance AnnotationObject PDFLink where
     addAnnotation = addObject
     annotationType _ = PDFName "Link"
     annotationContent (PDFLink s _ _ _ _) = s
-    annotationRect (PDFLink _ (Rectangle (x0 :+ y0) (x1 :+ y1)) _ _ _) = [x0,y0,x1,y1]
+    annotationRect (PDFLink _ (Rect (x0 :+ y0) (x1 :+ y1)) _ _ _) = [x0,y0,x1,y1]
     annotationToGlobalCoordinates (PDFLink a r b c d) = do
         gr <- transformAnnotRect r
         return $ PDFLink a gr b c d
 
-transformAnnotRect :: Rectangle -> Draw Rectangle
+transformAnnotRect :: Rect -> Draw Rect
 transformAnnotRect r = do
     ms <- gets matrix
     let m = foldl' (*) 1 ms
