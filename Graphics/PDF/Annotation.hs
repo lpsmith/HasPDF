@@ -73,7 +73,7 @@ applyMatrixToRectangle m (Rect (xa :+ ya) (xb :+ yb)) =
     in  Rect (x1 :+ y1) (x2 :+ y2)
 
 -- | Get the border shqpe depending on the style
-getBorder :: Bool -> [PDFInteger]
+getBorder :: Bool -> [Int]
 getBorder False = [0,0,0]
 getBorder True = [0,0,1]
 
@@ -143,7 +143,7 @@ instance PdfObject PDFLink where
          dest = [ AnyPdfObject page
                 , AnyPdfObject (PDFName "XYZ")
                 , AnyPdfObject xy
-                , AnyPdfObject (PDFInteger 0)]
+                , AnyPdfObject (0 :: Int)]
 
 
 instance AnnotationObject PDFLink where

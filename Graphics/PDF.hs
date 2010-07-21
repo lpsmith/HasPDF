@@ -171,7 +171,7 @@ data PDFTrailer
 
 instance PdfObject PDFTrailer where
    toPDF (PDFTrailer size root infos) = toPDF $ PDFDictionary. M.fromList $
-     [ (PDFName "Size",AnyPdfObject . PDFInteger $ size)
+     [ (PDFName "Size",AnyPdfObject size)
      , (PDFName "Root",AnyPdfObject root)
      , (PDFName "Info",AnyPdfObject . PDFDictionary . M.fromList $ allInfos)
      ]

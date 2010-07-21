@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 ---------------------------------------------------------
 -- |
 -- Copyright   : (c) alpha 2006
@@ -39,25 +41,11 @@ data AnyPdfObject = forall a . PdfObject a => AnyPdfObject a
 instance PdfObject AnyPdfObject where
  toPDF (AnyPdfObject a) = toPDF a
 
--- | An integer in a PDF document
-newtype PDFInteger = PDFInteger Int deriving(Eq,Show,Ord,Num)
-
 -- | A length in a PDF document
-data PDFLength = PDFLength Int64 deriving(Eq,Show,Ord)
-
-instance Num PDFLength where
-  (+) (PDFLength a) (PDFLength b) = PDFLength (a+b)
-  (*) (PDFLength a) (PDFLength b) = PDFLength (a*b)
-  negate (PDFLength a) = PDFLength (negate a)
-  abs (PDFLength a) = PDFLength (abs a)
-  signum (PDFLength a) = PDFLength (signum a)
-  fromInteger a = PDFLength (fromInteger a)
+newtype PDFLength = PDFLength Int64 deriving(Eq,Show,Ord,Num)
 
 -- | A real number in a PDF document
 type PDFFloat = Double
-
-instance PdfObject PDFInteger where
-    toPDF (PDFInteger a) = serialize a
 
 instance PdfObject Int where
     toPDF a = serialize a
@@ -197,9 +185,12 @@ pdfDictUnion (PDFDictionary a) (PDFDictionary b) = PDFDictionary $ M.union a b
 -- | A PDF rectangle
 data Rect = Rect !Point !Point deriving(Eq)
 
+roundInt :: RealFrac a => a -> Int
+roundInt = round
+
 instance PdfObject Rect where
   toPDF (Rect (a :+ b) (c :+ d))
-    = toPDF . map (AnyPdfObject . PDFInteger . round) $ [a,b,c,d]
+    = toPDF . map (AnyPdfObject . roundInt) $ [a,b,c,d]
 
 
 -- | A Referenced objects

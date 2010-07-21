@@ -575,13 +575,13 @@ instance PdfObject PDFPages where
  toPDF (PDFPages c Nothing l) = toPDF $ PDFDictionary. M.fromList $
   [ (PDFName "Type",AnyPdfObject (PDFName "Pages"))
   , (PDFName "Kids",AnyPdfObject $ map AnyPdfObject l)
-  , (PDFName "Count",AnyPdfObject . PDFInteger $ c)
+  , (PDFName "Count",AnyPdfObject c)
   ]
  toPDF (PDFPages c (Just theParent) l) = toPDF $ PDFDictionary. M.fromList $
   [ (PDFName "Type",AnyPdfObject (PDFName "Pages"))
   , (PDFName "Parent",AnyPdfObject theParent)
   , (PDFName "Kids",AnyPdfObject $ map AnyPdfObject l)
-  , (PDFName "Count",AnyPdfObject . PDFInteger $ c)
+  , (PDFName "Count",AnyPdfObject c)
   ]
 
 
@@ -615,9 +615,9 @@ instance PdfObject PDFCatalog where
 
 
 instance PdfObject OutlineStyle where
-   toPDF NormalOutline = toPDF (PDFInteger 0)
-   toPDF ItalicOutline = toPDF (PDFInteger 1)
-   toPDF BoldOutline = toPDF (PDFInteger 2)
+   toPDF NormalOutline = toPDF (0 :: Int)
+   toPDF ItalicOutline = toPDF (1 :: Int)
+   toPDF BoldOutline = toPDF (2 :: Int)
 
 instance PdfObject PDFOutlineEntry where
  toPDF (PDFOutlineEntry title theParent prev next first theLast count dest color style) =
@@ -634,7 +634,7 @@ instance PdfObject PDFOutlineEntry where
       ++
       maybe [] (\x -> [(PDFName "Last",AnyPdfObject x)]) theLast
       ++
-      [ (PDFName "Count",AnyPdfObject (PDFInteger count))
+      [ (PDFName "Count",AnyPdfObject count)
       , (PDFName "Dest",AnyPdfObject dest)
       , (PDFName "C",AnyPdfObject color)
       , (PDFName "F",AnyPdfObject style)
@@ -684,11 +684,11 @@ getRgbColor (Hsv h s v) = let (r,g,b) = hsvToRgb (h,s,v) in (r, g, b)
 -- | Interpolation function
 interpole :: Int -> PDFFloat -> PDFFloat -> AnyPdfObject
 interpole n x y = AnyPdfObject . PDFDictionary . M.fromList $
-                            [ (PDFName "FunctionType", AnyPdfObject . PDFInteger $ 2)
+                            [ (PDFName "FunctionType", AnyPdfObject (2 :: Int))
                             , (PDFName "Domain", AnyPdfObject . map AnyPdfObject $ ([0,1] :: [PDFFloat]))
                             , (PDFName "C0", AnyPdfObject . map AnyPdfObject $ [x])
                             , (PDFName "C1", AnyPdfObject . map AnyPdfObject $ [y])
-                            , (PDFName "N", AnyPdfObject . PDFInteger $  n)
+                            , (PDFName "N", AnyPdfObject n)
                             ]
 
 type Radius = Scalar
@@ -727,7 +727,7 @@ instance Ord PDFShading where
 
 instance PdfResourceObject PDFShading where
       toRsrc (AxialShading (x0 :+ y0) (x1 :+ y1) ca cb) = AnyPdfObject . PDFDictionary . M.fromList $
-                                 [ (PDFName "ShadingType",AnyPdfObject . PDFInteger $ 2)
+                                 [ (PDFName "ShadingType",AnyPdfObject (2 :: Int))
                                  , (PDFName "Coords",AnyPdfObject . map AnyPdfObject $ [x0,y0,x1,y1])
                                  , (PDFName "ColorSpace",AnyPdfObject . PDFName $ "DeviceRGB")
                                  , (PDFName "Function",AnyPdfObject $ [interpole 1 ra rb,interpole 1 ga gb,interpole 1 ba bb])
@@ -736,7 +736,7 @@ instance PdfResourceObject PDFShading where
             (ra,ga,ba) = getRgbColor ca
             (rb,gb,bb) = getRgbColor cb
       toRsrc (RadialShading (x0 :+ y0) r0 (x1 :+ y1) r1 ca cb) = AnyPdfObject . PDFDictionary . M.fromList $
-                                         [ (PDFName "ShadingType",AnyPdfObject . PDFInteger $ 3)
+                                         [ (PDFName "ShadingType",AnyPdfObject (3 :: Int))
                                          , (PDFName "Coords",AnyPdfObject . map AnyPdfObject $ [x0,y0,r0,x1,y1,r1])
                                          , (PDFName "ColorSpace",AnyPdfObject . PDFName $ "DeviceRGB")
                                          , (PDFName "Function",AnyPdfObject $ [interpole 1 ra rb,interpole 1 ga gb,interpole 1 ba bb])

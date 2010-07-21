@@ -285,16 +285,16 @@ createPDFJpeg (JpegFile bits_per_component (width :+ height) color_space img) = 
            1 -> [(PDFName "ColorSpace",AnyPdfObject $ PDFName "DeviceGray")]
            3 -> [(PDFName "ColorSpace",AnyPdfObject $ PDFName "DeviceRGB")]
            4 -> [(PDFName "ColorSpace",AnyPdfObject $ PDFName "DeviceCMYK")
-                ,(PDFName "Decode",AnyPdfObject . map (AnyPdfObject . PDFInteger) $ [1,0,1,0,1,0,1,0])
+                ,(PDFName "Decode",AnyPdfObject . map AnyPdfObject $ [1,0,1,0,1,0,1,0::Int])
                 ]
            _ -> error "Jpeg color space not supported"
        a' = 
                  do modifyStrict $ \s -> s  {otherRsrcs = PDFDictionary. M.fromList $ 
                                                    [ (PDFName "Type",AnyPdfObject . PDFName $ "XObject")
                                                    , (PDFName "Subtype",AnyPdfObject . PDFName $ "Image")
-                                                   , (PDFName "Width",AnyPdfObject . PDFInteger $ round width)
-                                                   , (PDFName "Height",AnyPdfObject . PDFInteger $ round height)
-                                                   , (PDFName "BitsPerComponent",AnyPdfObject . PDFInteger $ bits_per_component)
+                                                   , (PDFName "Width",AnyPdfObject (round width :: Int))
+                                                   , (PDFName "Height",AnyPdfObject (round height :: Int))
+                                                   , (PDFName "BitsPerComponent",AnyPdfObject bits_per_component)
                                                    , (PDFName "Interpolate", AnyPdfObject True)
                                                    , (PDFName "Filter",AnyPdfObject . PDFName $ "DCTDecode")
                                                    ] ++ color color_space

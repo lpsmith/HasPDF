@@ -91,9 +91,9 @@ module Graphics.PDF.Typesetting(
   ) where
 
 import Graphics.PDF.LowLevel.Types
-import Graphics.PDF.Text
+-- import Graphics.PDF.Text
 import Graphics.PDF.Draw
-import Graphics.PDF.Shapes
+-- import Graphics.PDF.Shapes
 import Graphics.PDF.Coordinates
 import Control.Monad.RWS
 import Graphics.PDF.Typesetting.Breaking

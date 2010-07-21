@@ -65,9 +65,9 @@ createPDFXForm a@(xa :+ ya) b@(xb :+ yb) d
                   s {otherRsrcs = PDFDictionary. M.fromList $
                        [ (PDFName "Type"     , AnyPdfObject . PDFName $ "XObject")
                        , (PDFName "Subtype"  , AnyPdfObject . PDFName $ "Form")
-                       , (PDFName "FormType" , AnyPdfObject . PDFInteger $ 1)
-                       , (PDFName "Matrix"   , AnyPdfObject . (map (AnyPdfObject . PDFInteger)) $ [1,0,0,1,0,0])
-                       , (PDFName "BBox"     , AnyPdfObject . (map AnyPdfObject) $ [xa,ya,xb,yb])
+                       , (PDFName "FormType" , AnyPdfObject (1 :: Int))
+                       , (PDFName "Matrix"   , AnyPdfObject . map AnyPdfObject $ [1,0,0,1,0,0::Int])
+                       , (PDFName "BBox"     , AnyPdfObject . map AnyPdfObject $ [xa,ya,xb,yb])
                        ]
                     }
                 d

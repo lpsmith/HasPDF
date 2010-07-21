@@ -74,10 +74,10 @@ createTilingPattern a@(xa :+ ya) b@(xb :+ yb) (hstep :+ vstep) pt tt d =
     let a' = do modifyStrict $ \s ->
                   s {otherRsrcs = PDFDictionary. M.fromList $
                        [ (PDFName "Type",AnyPdfObject . PDFName $ "Pattern")
-                       , (PDFName "PatternType",AnyPdfObject . PDFInteger $ 1)
-                       , (PDFName "PaintType",AnyPdfObject . PDFInteger $ (fromEnum pt) + 1)
-                       , (PDFName "TilingType",AnyPdfObject . PDFInteger $ (fromEnum tt) + 1)
-                       , (PDFName "Matrix",AnyPdfObject . (map (AnyPdfObject . PDFInteger)) $ [1,0,0,1,0,0])
+                       , (PDFName "PatternType",AnyPdfObject (1 :: Int))
+                       , (PDFName "PaintType",AnyPdfObject (fromEnum pt + 1))
+                       , (PDFName "TilingType",AnyPdfObject (fromEnum tt + 1))
+                       , (PDFName "Matrix",AnyPdfObject . map AnyPdfObject $ [1,0,0,1,0,0::Int])
                        , (PDFName "BBox",AnyPdfObject . map AnyPdfObject  $ [xa,ya,xb,yb])
                        , (PDFName "XStep",AnyPdfObject hstep)
                        , (PDFName "YStep",AnyPdfObject vstep)
