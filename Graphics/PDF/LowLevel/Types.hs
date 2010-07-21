@@ -13,6 +13,7 @@
 module Graphics.PDF.LowLevel.Types where
 
 import Graphics.PDF.Coordinates
+import Graphics.PDF.LowLevel.Serializer
 
 import qualified Data.Map as M
 import Data.List(intersperse)
@@ -21,9 +22,6 @@ import Control.Monad.State
 import Control.Monad.Writer
 import Data.Word
 import Data.Binary.Builder(Builder,fromByteString)
-import Graphics.PDF.LowLevel.Serializer
-import Data.Monoid
-import Data.Complex
 import qualified Data.ByteString as S
 #if __GLASGOW_HASKELL__ >= 608
 import qualified Data.ByteString.Lazy.Internal as L(ByteString(..))
@@ -173,15 +171,14 @@ instance PdfObject PDFDictionary where
                                        ++ [convertLevel a]
                                        ++ [bgt,bgt]
    where
-     convertLevel _ = let convertItem key value current = mconcat $ [ toPDF key
-                                                                    , bspace
-                                                                    , toPDF value
-                                                                    , newline
-                                                                    , current
-                                                                    ]
+     convertLevel _ = M.foldWithKey convertItem mempty a
+        where convertItem key value current
+                  = mconcat $ [ toPDF key
+                              , bspace
+                              , toPDF value
+                              , newline
+                              , current ]
 
-          in
-           M.foldWithKey convertItem mempty a
 
 -- | Am empty dictionary
 emptyDictionary :: PDFDictionary
@@ -201,7 +198,7 @@ pdfDictUnion (PDFDictionary a) (PDFDictionary b) = PDFDictionary $ M.union a b
 data Rect = Rect !Point !Point deriving(Eq)
 
 instance PdfObject Rect where
-  toPDF (Rect (a :+ b) (c :+ d)) 
+  toPDF (Rect (a :+ b) (c :+ d))
     = toPDF . map (AnyPdfObject . PDFInteger . round) $ [a,b,c,d]
 
 
